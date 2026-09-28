@@ -1,0 +1,262 @@
+/* --- Шапка ------------------------------------------------------------------
+   Фиксирована поверх сцены, без фона: на первом экране под ней только
+   светлый фон, подложка не нужна. Размеры шрифтов и пилюль растут вместе с
+   экраном (clamp), пропорции — как в референсе. */
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 2.9vw, 3rem);
+  height: var(--header-height);
+  padding-inline: var(--page-gutter);
+}
+
+.brand {
+  display: block;
+  flex: none;
+  width: clamp(8.25rem, 10.6vw, 10.75rem);
+  border-radius: 0.5rem;
+}
+
+/* --- Меню-пилюли ----------------------------------------------------------- */
+.navList {
+  display: flex;
+  gap: clamp(0.25rem, 0.8vw, 0.75rem);
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  height: clamp(2.5rem, 3.6vw, 3.25rem);
+  padding-inline: clamp(1rem, 1.75vw, 1.75rem);
+  border-radius: var(--radius-full);
+  font-size: clamp(0.95rem, 1.28vw, 1.25rem);
+  font-weight: 500;
+  color: var(--c-text-muted);
+  transition:
+    color 200ms var(--ease-soft),
+    background-color 200ms var(--ease-soft);
+}
+
+/* Активная пилюля — "стеклянная": полупрозрачный белый, тонкий кант и
+   лёгкая холодная тень, как у активной кнопки в референсе, но в светлой гамме */
+.navLink[aria-current='page'] {
+  color: var(--c-navy);
+  font-weight: 600;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.55));
+  box-shadow:
+    inset 0 0 0 1px rgb(14 34 51 / 0.09),
+    inset 0 1px 0 #ffffff,
+    var(--shadow-soft);
+  backdrop-filter: blur(10px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navLink:not([aria-current]):hover {
+    color: var(--c-navy);
+    background-color: rgb(255 255 255 / 0.5);
+  }
+}
+
+/* --- Кнопки ------------------------------------------------------------------ */
+.actions {
+  display: flex;
+  gap: clamp(0.5rem, 0.9vw, 0.9rem);
+  margin-left: auto;
+}
+
+/* Обёртки кнопок — цели вступительной анимации (см. Header.tsx) */
+.actionSlot {
+  display: flex;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: clamp(2.6rem, 3.4vw, 3.25rem);
+  padding-inline: clamp(1.1rem, 1.75vw, 1.75rem);
+  border-radius: var(--radius-full);
+  font-size: clamp(0.95rem, 1.22vw, 1.2rem);
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    transform 160ms var(--ease-out),
+    box-shadow 220ms var(--ease-soft),
+    background-color 220ms var(--ease-soft),
+    filter 220ms var(--ease-soft);
+}
+
+/* Отклик на нажатие — кнопка чуть проседает */
+.button:active {
+  transform: scale(0.97);
+}
+
+.buttonLight {
+  color: var(--c-navy);
+  background-color: #ffffff;
+  box-shadow:
+    inset 0 0 0 1px rgb(14 34 51 / 0.06),
+    var(--shadow-soft);
+}
+
+/* Ледяная кнопка: светлый голубой градиент и тёмно-синий текст — контраст
+   текста выше 7:1, при этом кнопка остаётся "ледяной", а не синей */
+.buttonIce {
+  color: var(--c-navy);
+  background: linear-gradient(180deg, #c3e8fa 0%, #86cbee 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.85),
+    inset 0 0 0 1px rgb(255 255 255 / 0.45),
+    0 12px 26px -12px rgb(46 150 210 / 0.75);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .buttonLight:hover {
+    box-shadow:
+      inset 0 0 0 1px rgb(14 34 51 / 0.08),
+      0 1px 2px rgb(24 64 96 / 0.06),
+      0 16px 34px -14px rgb(24 64 96 / 0.3);
+  }
+
+  .buttonIce:hover {
+    filter: brightness(1.04) saturate(1.1);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      inset 0 0 0 1px rgb(255 255 255 / 0.5),
+      0 16px 32px -12px rgb(46 150 210 / 0.9);
+  }
+}
+
+/* --- Мобильное меню ------------------------------------------------------------ */
+.menuSlot {
+  display: none;
+  margin-left: auto;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 2.75rem;
+  padding-inline: 1.1rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--c-navy);
+  background: rgb(255 255 255 / 0.8);
+  box-shadow:
+    inset 0 0 0 1px rgb(14 34 51 / 0.08),
+    var(--shadow-soft);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out);
+}
+
+.menuButton:active {
+  transform: scale(0.97);
+}
+
+/* Иконка — две тонкие линии; в открытом меню они сходятся в крестик */
+.menuIcon {
+  position: relative;
+  width: 1rem;
+  height: 0.5rem;
+}
+
+.menuIcon::before,
+.menuIcon::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transition: transform 220ms var(--ease-out);
+}
+
+.menuIcon::before {
+  top: 0;
+}
+
+.menuIcon::after {
+  bottom: 0;
+}
+
+.menuButton[aria-expanded='true'] .menuIcon::before {
+  transform: translateY(calc(0.25rem - 0.75px)) rotate(45deg);
+}
+
+.menuButton[aria-expanded='true'] .menuIcon::after {
+  transform: translateY(calc(-0.25rem + 0.75px)) rotate(-45deg);
+}
+
+.mobileMenu {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(var(--header-height) + 2rem) var(--page-gutter) 2.5rem;
+  background: rgb(244 249 253 / 0.86);
+  backdrop-filter: blur(24px) saturate(1.2);
+  overscroll-behavior: contain;
+  opacity: 1;
+  transition: opacity 220ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+.mobileMenu[hidden] {
+  display: none;
+}
+
+.mobileList {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.mobileLink {
+  display: block;
+  padding-block: 0.4rem;
+  border-radius: 0.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 12vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--c-text-muted);
+}
+
+.mobileLink[aria-current='page'] {
+  color: var(--c-navy);
+}
+
+.mobileActions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mobileActions .button {
+  height: 3.25rem;
+  font-size: 1.05rem;
+}
+
+/* --- Узкие экраны: меню и кнопки уходят в панель ------------------------------ */
+@media (max-width: 999px) {
+  .nav,
+  .actions {
+    display: none;
+  }
+
+  .menuSlot {
+    display: flex;
+  }
+}

@@ -1,0 +1,109 @@
+/* Слой выносок поверх сцены, внутри "прилипающего" экрана Hero: координаты
+   совпадают с canvas (оба во весь экран). События мыши не ловит. */
+.callouts {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Линия — тонкий тёмно-синий штрих; рисуется от точки к подписи через
+   stroke-dashoffset (его ведёт сцена по скроллу) */
+.line {
+  fill: none;
+  stroke: var(--c-navy);
+  stroke-opacity: 0.55;
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+/* Точка на банке: белая с ледяным кантом */
+.dot {
+  fill: #ffffff;
+  stroke: #2e96d2;
+  stroke-width: 2;
+}
+
+/* Мягкая пульсация вокруг точки — "маячок" на детали */
+.pulse {
+  fill: rgb(120 196 238 / 0.28);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse 2.4s var(--ease-out) infinite;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(0.6);
+    fill-opacity: 1;
+  }
+
+  to {
+    transform: scale(2.2);
+    fill-opacity: 0;
+  }
+}
+
+.list {
+  position: absolute;
+  inset: 0;
+}
+
+.item {
+  visibility: hidden;
+}
+
+/* Подпись — небольшая стеклянная плашка, как карточки первого экрана */
+.label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 17rem;
+  padding: 0.6rem 0.85rem 0.65rem;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 0.6);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.8),
+    var(--shadow-soft);
+  backdrop-filter: blur(12px) saturate(1.2);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.label[data-side='left'] {
+  text-align: right;
+}
+
+.title {
+  font-size: clamp(0.92rem, 1.05vw, 1.05rem);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--c-navy);
+}
+
+.text {
+  margin-top: 0.15rem;
+  font-size: clamp(0.8rem, 0.9vw, 0.9rem);
+  line-height: 1.35;
+  color: var(--c-steel);
+}
+
+/* Мало места сбоку (узкий экран) — остаётся только заголовок */
+.label[data-compact='true'] .text {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+    fill-opacity: 0;
+  }
+}

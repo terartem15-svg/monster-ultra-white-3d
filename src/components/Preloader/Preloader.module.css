@@ -1,0 +1,77 @@
+/* Непрозрачный "иней" поверх всей страницы — тот же градиент, что у фона */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-preloader);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.75rem;
+  background:
+    radial-gradient(120% 90% at 50% 45%, var(--c-frost) 38%, var(--c-glacier) 82%, var(--c-glacier-deep) 100%);
+  background-color: var(--c-frost);
+  transition: opacity 700ms var(--ease-out) 120ms;
+}
+
+.mark {
+  width: 3.25rem;
+  transition:
+    transform 800ms var(--ease-out),
+    filter 800ms var(--ease-out),
+    opacity 500ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Линия прогресса: пока сцена собирается — ползёт почти до конца,
+   когда готова — дотягивается до 100% */
+.bar {
+  width: 7.5rem;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(14 34 51 / 0.1);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--c-ice-soft), #2e96d2);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: load 2.4s var(--ease-out) forwards;
+}
+
+.preloader[data-ready='true'] .barFill {
+  animation: none;
+  transform: scaleX(1);
+  transition: transform 350ms var(--ease-out);
+}
+
+/* Уход: коготь чуть вырастает и размывается, экран растворяется */
+.preloader[data-leaving='true'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.preloader[data-leaving='true'] .mark {
+  transform: scale(1.35);
+  filter: blur(6px);
+  opacity: 0;
+}
+
+@keyframes load {
+  to {
+    transform: scaleX(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preloader[data-leaving='true'] .mark {
+    transform: none;
+    filter: none;
+  }
+}

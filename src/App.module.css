@@ -1,0 +1,39 @@
+/* Страница — контейнер для слоёв: canvas (fixed), контент, шапка, курсор */
+.page {
+  position: relative;
+  min-height: 100vh;
+}
+
+.main {
+  position: relative;
+  z-index: var(--z-content);
+}
+
+/* Обёртка шапки — только для inert под прелоадером, в раскладке не участвует */
+.chrome {
+  display: contents;
+}
+
+.main:focus {
+  outline: none;
+}
+
+/* Ссылка "к контенту" для клавиатуры: спрятана, пока не получит фокус */
+.skipLink {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: var(--z-cursor);
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  color: var(--c-navy);
+  background: #ffffff;
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-160%);
+  transition: transform 200ms var(--ease-out);
+}
+
+.skipLink:focus-visible {
+  transform: translateY(0);
+}

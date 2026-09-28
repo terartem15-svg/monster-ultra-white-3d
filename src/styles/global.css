@@ -1,0 +1,112 @@
+/* Базовый ресет и фон приложения. Цвета и размеры — только из tokens.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+html {
+  /* Запас под фон до инициализации WebGL: тот же "иней" с голубыми краями,
+     что рисует Backdrop в сцене, — при загрузке не мелькает белый экран */
+  background:
+    radial-gradient(120% 90% at 50% 45%, var(--c-frost) 38%, var(--c-glacier) 82%, var(--c-glacier-deep) 100%);
+  background-color: var(--c-frost);
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--c-text);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+p,
+ol,
+ul {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* Касания: без задержки двойного тапа и без серой вспышки подсветки —
+   отклик на нажатие дают собственные :active-состояния кнопок */
+a,
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--c-ice) 30%, transparent);
+  color: var(--c-navy);
+}
+
+/* Видимый фокус с клавиатуры — единый для всех интерактивных элементов */
+:focus-visible {
+  outline: 2px solid var(--c-ice);
+  outline-offset: 3px;
+}
+
+/* Кастомный курсор (components/Cursor) прячет системный только когда сам
+   активен: класс ставится на <html> лишь на устройствах с точным указателем */
+html.has-custom-cursor,
+html.has-custom-cursor a,
+html.has-custom-cursor button {
+  cursor: none;
+}
+
+/* Рекомендованные стили Lenis: без них плавный скролл конфликтует с
+   нативным scroll-behavior и якорями */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/* Текст только для скринридеров */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

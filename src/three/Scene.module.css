@@ -1,0 +1,8 @@
+/* Canvas во весь экран под контентом страницы. События мыши ему не нужны:
+   указатель сцена читает с окна (hooks/usePointerTracking.ts). */
+.canvasWrapper {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas);
+  pointer-events: none;
+}

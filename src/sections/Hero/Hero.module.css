@@ -1,0 +1,296 @@
+/* --- Секция и "прилипающий" экран ------------------------------------------
+   Секция выше экрана на длину скролл-сцены; внутренний блок sticky держит
+   первый экран на месте, пока скролл ведёт сцену: сборка банки, детали с
+   выносками, финал — примерно по экрану прокрутки на главу. */
+.hero {
+  position: relative;
+  z-index: var(--z-content);
+  height: 380vh;
+  height: 380svh;
+}
+
+.viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* --- Сетка первого экрана (десктоп) ----------------------------------------
+   Колонки и строки сняты с референса (кадр 1600px): колонки карточек по
+   ~19.6% ширины с отступом ~9.4% от края, центр ~42% — под банку.
+   Шесть строк — "линейка" высот: заголовок занимает верхние 30%, правые
+   карточки идут под ним, левые смещены на полкарточки выше — как в
+   референсе, где колонки не выровнены по верху. */
+.grid {
+  --hero-inset: calc(var(--page-gutter) + 3.5vw);
+
+  position: absolute;
+  inset: calc(var(--header-height) + clamp(0.5rem, 3vh, 2.5rem)) var(--hero-inset) clamp(2.5rem, 7vh, 4.5rem);
+  display: grid;
+  grid-template-columns: [left] var(--column-width) [center] minmax(0, 1fr) [right] var(--column-width);
+  grid-template-rows: 6fr 24fr 11fr 24fr 11fr 24fr;
+}
+
+.stage {
+  grid-column: center;
+  grid-row: 1 / -1;
+  margin-inline: clamp(0.5rem, 1.2vw, 1.5rem);
+  margin-block: calc(-1 * clamp(0.5rem, 2vh, 1.5rem)) 0;
+}
+
+/* --- Заголовок ------------------------------------------------------------------
+   Nunito, как в референсе: крупный, плотный, в три строки. Каждая строка —
+   маска (overflow: hidden), из которой текст выезжает при загрузке. */
+.title {
+  grid-column: right;
+  grid-row: 1 / 3;
+  align-self: end;
+  /* Заголовок шире колонки карточек — до поля страницы, как в референсе */
+  margin-right: -3.5vw;
+  margin-bottom: clamp(0.6rem, 1.8vh, 1.5rem);
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, min(5.1vw, 8.1vh), 6.5rem);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  color: var(--c-navy);
+  white-space: nowrap;
+  text-wrap: balance;
+}
+
+.line {
+  display: block;
+  overflow: hidden;
+  /* Запас снизу, чтобы маска не срезала выносные элементы (y, k) */
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+
+.lineInner {
+  display: block;
+}
+
+/* --- Карточки ------------------------------------------------------------------------
+   Список — один ol в порядке чтения 01 → 04, а display: contents отдаёт
+   его пункты прямо в сетку: визуально 01/03 слева, 02/04 справа, а для
+   скринридера порядок остаётся честным. */
+.features {
+  display: contents;
+}
+
+.features > li:nth-child(1) {
+  grid-column: left;
+  grid-row: 2 / 4;
+}
+
+.features > li:nth-child(2) {
+  grid-column: right;
+  grid-row: 3 / 5;
+}
+
+.features > li:nth-child(3) {
+  grid-column: left;
+  grid-row: 4 / 6;
+}
+
+.features > li:nth-child(4) {
+  grid-column: right;
+  grid-row: 5 / 7;
+}
+
+/* --- Подсказка скролла и финальная подпись ------------------------------------------
+   Подсказка — в левом нижнем углу под колонкой карточек (центр занят дном
+   банки), подпись финала — по центру: к концу скролла банка собрана и
+   стала ниже, место под ней свободно. */
+.cue,
+.outro {
+  position: absolute;
+  bottom: clamp(0.9rem, 2.6vh, 1.75rem);
+}
+
+.cue {
+  left: calc(var(--page-gutter) + 3.5vw);
+}
+
+.outro {
+  left: 50%;
+  translate: -50% 0;
+}
+
+.cueInner {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+}
+
+/* "Колёсико мыши": точка медленно скатывается вниз */
+.cueTrack {
+  position: relative;
+  width: 1.1rem;
+  height: 1.7rem;
+  border: 1.5px solid currentColor;
+  border-radius: 1rem;
+  opacity: 0.75;
+}
+
+.cueDot {
+  position: absolute;
+  top: 0.3rem;
+  left: 50%;
+  width: 3px;
+  height: 6px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: cue 1.9s var(--ease-in-out) infinite;
+}
+
+@keyframes cue {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  70% {
+    transform: translateY(0.55rem);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0.55rem);
+    opacity: 0;
+  }
+}
+
+/* Подпись финала появляется только в конце скролл-сцены (GSAP autoAlpha) */
+.outro {
+  visibility: hidden;
+  opacity: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 1.7vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--c-navy);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cueDot {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* --- Планшет: заголовок сверху, банка в центре, карточки 2×2 внизу ------------------ */
+@media (max-width: 999px) {
+  .grid {
+    inset: calc(var(--header-height) + 0.5rem) var(--page-gutter) clamp(1.25rem, 3vh, 2rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    column-gap: 0.9rem;
+  }
+
+  .title {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    align-self: start;
+    margin-right: 0;
+    margin-bottom: 0;
+    white-space: normal;
+    font-size: clamp(2.6rem, 7.6vw, 4.5rem);
+  }
+
+  /* Строки заголовка текут в одну-две строки — вертикаль нужнее банке */
+  .line {
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  .stage {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+  }
+
+  .features > li:nth-child(1) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .features > li:nth-child(2) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .features > li:nth-child(3) {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .features > li:nth-child(4) {
+    grid-column: 2;
+    grid-row: 4;
+  }
+
+  /* Карточки внизу экрана — подсказке негде встать, жест скролла и так привычен */
+  .cue {
+    display: none;
+  }
+}
+
+/* --- Телефон: карточки — горизонтальная лента с прокруткой пальцем ------------------ */
+@media (max-width: 699px) {
+  .grid {
+    inset: calc(var(--header-height) + 0.25rem) 0 clamp(1rem, 2.6vh, 1.5rem);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: 0;
+  }
+
+  .title {
+    grid-column: 1;
+    padding-inline: var(--page-gutter);
+    font-size: clamp(2.35rem, 11.2vw, 3.4rem);
+  }
+
+  .stage {
+    grid-column: 1;
+    margin-inline: var(--page-gutter);
+  }
+
+  .features {
+    display: flex;
+    grid-column: 1;
+    grid-row: 3;
+    gap: 0.75rem;
+    padding-inline: var(--page-gutter);
+    padding-block: 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--page-gutter);
+    scrollbar-width: none;
+  }
+
+  .features::-webkit-scrollbar {
+    display: none;
+  }
+
+  .features > li:nth-child(n) {
+    flex: 0 0 min(76vw, 19rem);
+    grid-column: auto;
+    grid-row: auto;
+    scroll-snap-align: start;
+  }
+}

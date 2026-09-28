@@ -1,0 +1,73 @@
+/* Логотип масштабируется по ширине контейнера, высота — по viewBox */
+.logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Парение когтя: медленный подъём-опуск всей группы (как банка в сцене,
+   тот же ~7-секундный ритм) плюс отставание каждого штриха. Длины в
+   единицах viewBox (у SVG px = единица координат): при высоте логотипа
+   ~44px амплитуда 4 ед. — это около 1.7 экранного пикселя. */
+.claw {
+  animation: hover 6.8s var(--ease-soft) infinite alternate;
+  transform-box: fill-box;
+}
+
+.stroke {
+  animation: drift 4.6s ease-in-out infinite alternate;
+  transform-box: fill-box;
+}
+
+/* Ледяной блик: узкая светлая полоса пробегает по когтю раз в ~7 секунд,
+   остальное время стоит за его пределами */
+.glint {
+  animation: glint 7.2s var(--ease-in-out) infinite;
+  transform: skewX(-18deg);
+  mix-blend-mode: screen;
+}
+
+@keyframes hover {
+  from {
+    transform: translateY(4px);
+  }
+
+  to {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateY(2px);
+  }
+
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes glint {
+  0%,
+  62% {
+    transform: translateX(0) skewX(-18deg);
+  }
+
+  86%,
+  100% {
+    transform: translateX(120px) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claw,
+  .stroke,
+  .glint {
+    animation: none;
+  }
+
+  .glint {
+    opacity: 0;
+  }
+}
