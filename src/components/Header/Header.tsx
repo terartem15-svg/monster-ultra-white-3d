@@ -5,6 +5,10 @@ import { HEADER_ACTIONS, NAV_LINKS, type NavLink } from '@/content/site'
 import { getActiveSection, hasSectionAnchor, navigateToSection, subscribeActiveSection } from '@/state/navigation'
 import styles from './Header.module.css'
 
+// Логотип ведёт туда же, куда пункт главы "top" (Home), где бы тот ни стоял в
+// меню — ищем по главе, а не по позиции в списке
+const HOME_LINK: NavLink = NAV_LINKS.find((link) => link.section === 'top') ?? { label: 'Home', href: '#top', section: 'top' }
+
 // Шапка по раскладке референса: логотип слева, меню-пилюли (Home активна),
 // справа две кнопки. На узких экранах меню и кнопки прячутся в
 // полноэкранную панель за кнопкой Menu.
@@ -68,6 +72,13 @@ export function Header() {
     requestAnimationFrame(() => navigateToSection(section, lenis))
   }
 
+  // Логотип ведёт к началу страницы. Если открыто мобильное меню — сначала
+  // закрыть его, как у пунктов меню, иначе страница уехала бы под панелью
+  const handleBrand = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (menuOpen) handleMobileLink(event, HOME_LINK)
+    else handleSectionLink(event, HOME_LINK)
+  }
+
   const currentFor = (link: NavLink) => (link.section && link.section === activeSection ? 'true' : undefined)
 
   return (
@@ -78,7 +89,7 @@ export function Header() {
         aria-label="Monster Ultra White, home"
         translate="no"
         data-intro="header"
-        onClick={(event) => handleSectionLink(event, NAV_LINKS[0])}
+        onClick={handleBrand}
       >
         <Logo />
       </a>

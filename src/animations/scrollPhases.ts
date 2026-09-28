@@ -1,3 +1,5 @@
+import { smoothstep } from '@/utils/smoothstep'
+
 // Фазы скролла по главам. Один источник для всех, кто двигается от скролла:
 // DOM (animations/heroScroll.ts, lineupScroll.ts), банки и лёд
 // (three/CanRig.tsx, three/lineup/*), выноски (three/CalloutTracker.tsx),
@@ -41,6 +43,12 @@ export const PHASES = {
 // На телефоне (compact) шаги короче — глава заметно короче, как в плане.
 export type LineupLayout = 'regular' | 'compact'
 
+// Границы раскладки главы по ширине окна — те же, что в CSS
+// (Lineup.module.css, FlavorPanel.module.css): уже compact — телефон
+// (короткие шаги скролла); уже stacked — банка сверху, плашка снизу, и 3D
+// ведёт очередь вниз, а улетающую банку — вверх
+export const LINEUP_BREAKPOINTS = { compact: 700, stacked: 1000 } as const
+
 export const LINEUP = {
   regular: { entry: 80, step: 62, tail: 45 },
   compact: { entry: 70, step: 48, tail: 35 },
@@ -69,11 +77,6 @@ export function lineupDistance(layout: LineupLayout, count: number): number {
   return entry + step * (count - 1) + tail
 }
 
-const smooth = (value: number, from: number, to: number) => {
-  const t = Math.min(1, Math.max(0, (value - from) / (to - from)))
-  return t * t * (3 - 2 * t)
-}
-
 export interface LineupState {
   // Стык с первым экраном 0..1, линейно по участку entry
   enter: number
@@ -97,7 +100,7 @@ export function lineupState(
   out.raw = Math.min(count - 1, Math.max(0, (scrolled - entry) / step))
   const index = Math.min(count - 2, Math.floor(out.raw))
   const half = LINEUP.hold / 2
-  out.position = count < 2 ? 0 : index + smooth(out.raw - index, half, 1 - half)
+  out.position = count < 2 ? 0 : index + smoothstep(out.raw - index, half, 1 - half)
   return out
 }
 

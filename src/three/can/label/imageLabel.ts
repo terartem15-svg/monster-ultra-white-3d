@@ -1,3 +1,4 @@
+import { smoothstep } from '@/utils/smoothstep'
 import { paintMetal, paintPrintEdges } from './base'
 import { LAYOUT, PANEL_CENTER, TEXTURE_WIDTH, createContext2d, createLayers, toCanvasY, uToX, type Layers } from './canvas'
 import { paintCondensation } from './condensation'
@@ -156,11 +157,6 @@ function fillSeam(color: CanvasRenderingContext2D, image: LabelImage, place: Pla
 }
 
 // --- Материал и тиснение из картинки ------------------------------------------------
-
-const smoothstep = (value: number, from: number, to: number) => {
-  const t = Math.min(1, Math.max(0, (value - from) / (to - from)))
-  return t * t * (3 - 2 * t)
-}
 
 // Яркость "фона" этикетки — медиана по всей печати: у одних банок фон
 // светлый, у Noir почти чёрный, поэтому порог тиснения считается от него

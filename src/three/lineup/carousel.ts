@@ -10,9 +10,9 @@ import { MathUtils } from 'three'
 //   rel = −1     улетела: с оборотом, к камере и за край кадра.
 //
 // Все координаты — в единицах композиции (группа layout в CanRig): банка
-// 3.2 в высоту, та же шкала, что у слота. Когда экран узкий и высокий
-// (телефон, планшет стоя), очередь уходит вниз-вправо, за плашку, а
-// улетающая банка — вверх: по бокам там места нет.
+// 3.2 в высоту, та же шкала, что у слота. В раскладке "столбиком" (телефон,
+// планшет: банка сверху, плашка снизу) очередь уходит вниз-вправо, за
+// плашку, а улетающая банка — вверх: по бокам там места нет.
 
 export interface CanPose {
   x: number
@@ -36,7 +36,7 @@ const QUEUE_LANDSCAPE: readonly QueueKey[] = [
   [7, 0.95, -17, -0.9],
 ]
 
-const QUEUE_PORTRAIT: readonly QueueKey[] = [
+const QUEUE_STACKED: readonly QueueKey[] = [
   [0, 0, 0, 0],
   [2.05, -1.2, -5.2, -0.42],
   [3.35, -2, -10.5, -0.68],
@@ -54,7 +54,7 @@ interface ExitPose {
 
 // Улетающая банка: три четверти оборота, лёгкий крен, к камере и за кадр
 const EXIT_LANDSCAPE: ExitPose = { x: -6.6, y: 1.8, z: 2.6, rotX: -0.25, rotY: -Math.PI * 1.5, rotZ: 0.55 }
-const EXIT_PORTRAIT: ExitPose = { x: -1.4, y: 7.8, z: 2.6, rotX: -0.35, rotY: -Math.PI * 1.5, rotZ: 0.3 }
+const EXIT_STACKED: ExitPose = { x: -1.4, y: 7.8, z: 2.6, rotX: -0.35, rotY: -Math.PI * 1.5, rotZ: 0.3 }
 
 // Сплайн Катмулла — Рома по четырём ключам: путь банки через ключевые
 // позы гладкий, без изломов на отметках очереди
@@ -66,14 +66,14 @@ function catmullRom(t: number, p0: number, p1: number, p2: number, p3: number): 
   return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1
 }
 
-export function carouselPose(rel: number, portrait: boolean, out: CanPose): CanPose {
+export function carouselPose(rel: number, stacked: boolean, out: CanPose): CanPose {
   out.visible = rel > -1 && rel < 2.95
   if (!out.visible) return out
 
   if (rel < 0) {
     // Уход: банка сначала трогается и поворачивается почти на месте, потом
     // разгоняется — кривые с разгоном (степени t), а не линейные
-    const exit = portrait ? EXIT_PORTRAIT : EXIT_LANDSCAPE
+    const exit = stacked ? EXIT_STACKED : EXIT_LANDSCAPE
     const t = -rel
     const accelerate = t * t
     out.x = exit.x * accelerate
@@ -85,7 +85,7 @@ export function carouselPose(rel: number, portrait: boolean, out: CanPose): CanP
     return out
   }
 
-  const keys = portrait ? QUEUE_PORTRAIT : QUEUE_LANDSCAPE
+  const keys = stacked ? QUEUE_STACKED : QUEUE_LANDSCAPE
   const last = keys.length - 1
   const index = Math.min(last - 1, Math.floor(rel))
   const t = rel - index

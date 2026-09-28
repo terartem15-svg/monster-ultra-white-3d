@@ -1,6 +1,7 @@
 import { use, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { MathUtils, RingGeometry, type BufferGeometry } from 'three'
+import { FLOAT_AMPLITUDE, FLOAT_SPEED } from '../float'
 import { canPieceGroups, sceneState } from '../sceneState'
 import { createLabelMaterial, createMetalMaterials, disposeMetalMaterials } from './canMaterials'
 import {
@@ -28,10 +29,7 @@ import { createPullTabGeometry, createRivetGeometry, createScoreLineGeometry } f
 
 // --- Парение ------------------------------------------------------------------------
 
-// Очень медленно и нежно: период подъёма-опускания ~7 с, амплитуда — около
-// полутора процентов высоты банки
-const FLOAT_AMPLITUDE = 0.05
-const FLOAT_SPEED = (Math.PI * 2) / 6.8
+// Очень медленно и нежно — амплитуда и период общие для сцены (three/float.ts)
 const YAW_SWAY = 0.1
 const YAW_SPEED = (Math.PI * 2) / 10.5
 const TILT_SWAY = 0.02

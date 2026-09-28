@@ -41,10 +41,12 @@ export function Lineup() {
 
   useEffect(() => {
     const section = sectionRef.current
+    const viewport = viewportRef.current
     const travel = travelRef.current
     const fill = fillRef.current
-    if (!section || !travel || !fill) return
+    if (!section || !viewport || !travel || !fill) return
     return createLineupScroll(section, {
+      viewport,
       rail: { travel, fill },
       onActiveChange: setActive,
     })
@@ -54,7 +56,11 @@ export function Lineup() {
   // экрана), а к первой банке, уже стоящей на месте
   useEffect(() => {
     return registerSectionAnchor('lineup', {
-      top: () => (sectionRef.current ? lineupScrollTop(sectionRef.current, 0) : 0),
+      top: () => {
+        const section = sectionRef.current
+        const viewport = viewportRef.current
+        return section && viewport ? lineupScrollTop(section, viewport, 0) : 0
+      },
       element: () => sectionRef.current,
     })
   }, [])
@@ -62,7 +68,8 @@ export function Lineup() {
   const handleSelect = useCallback(
     (index: number) => {
       const section = sectionRef.current
-      if (section) scrollToPosition(lineupScrollTop(section, index), lenis)
+      const viewport = viewportRef.current
+      if (section && viewport) scrollToPosition(lineupScrollTop(section, viewport, index), lenis)
     },
     [lenis],
   )

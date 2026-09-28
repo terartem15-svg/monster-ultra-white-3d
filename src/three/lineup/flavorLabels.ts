@@ -1,6 +1,7 @@
 import { CanvasTexture, NoColorSpace, RepeatWrapping, SRGBColorSpace, Texture, type ColorSpace, type WebGLRenderer } from 'three'
 import type { FlavorLabel } from '@/content/flavors'
 import type { LabelMaps } from '../can/canMaterials'
+import { createContext2d } from '../can/label/canvas'
 import { buildImageLabel } from '../can/label/imageLabel'
 import type { LabelRequest, LabelResponse } from './labelWorker'
 
@@ -61,6 +62,17 @@ function bitmapTexture(bitmap: ImageBitmap, colorSpace: ColorSpace, anisotropy: 
   return prepareTexture(texture, colorSpace, anisotropy)
 }
 
+// Холст в другом масштабе — запасной путь уменьшает карты так же, как
+// воркер: цвет и нормали в scale, материал ещё вдвое меньше
+function scaleCanvas(source: HTMLCanvasElement | OffscreenCanvas, scale: number): HTMLCanvasElement | OffscreenCanvas {
+  if (scale === 1) return source
+  const ctx = createContext2d(Math.round(source.width * scale), Math.round(source.height * scale))
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(source, 0, 0, ctx.canvas.width, ctx.canvas.height)
+  return ctx.canvas
+}
+
 function removeFrom(list: number[], value: number) {
   const at = list.indexOf(value)
   if (at >= 0) list.splice(at, 1)
@@ -112,6 +124,11 @@ export class FlavorLabelStore {
       if (this.entries[index]?.state === 'queued') this.queue.push(index)
     }
     this.pump()
+  }
+
+  // Этикетка собрана и уже в видеопамяти
+  isReady(index: number): boolean {
+    return this.entries[index]?.state === 'ready'
   }
 
   // Раз в кадр: одна текстура в видеопамять. Этикетка отдаётся материалу,
@@ -214,11 +231,11 @@ export class FlavorLabelStore {
       await image.decode()
       if (this.disposed) return
       const canvases = buildImageLabel({ source: image, width: image.naturalWidth, height: image.naturalHeight }, label)
-      const { anisotropy } = this.options
+      const { anisotropy, scale } = this.options
       this.accept(index, {
-        color: prepareTexture(new CanvasTexture(canvases.color), SRGBColorSpace, anisotropy),
-        surface: prepareTexture(new CanvasTexture(canvases.surface), NoColorSpace, anisotropy),
-        normal: prepareTexture(new CanvasTexture(canvases.normal), NoColorSpace, anisotropy),
+        color: prepareTexture(new CanvasTexture(scaleCanvas(canvases.color, scale)), SRGBColorSpace, anisotropy),
+        surface: prepareTexture(new CanvasTexture(scaleCanvas(canvases.surface, scale * 0.5)), NoColorSpace, anisotropy),
+        normal: prepareTexture(new CanvasTexture(scaleCanvas(canvases.normal, scale)), NoColorSpace, anisotropy),
       })
     } catch {
       this.fail(index)

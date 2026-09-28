@@ -1,10 +1,11 @@
 import { useRef, type ReactNode } from 'react'
 import { useFrame, type RootState } from '@react-three/fiber'
 import { MathUtils, type Group, type PerspectiveCamera } from 'three'
-import { LINEUP, PHASES, lineupState, type LineupState } from '@/animations/scrollPhases'
+import { LINEUP, LINEUP_BREAKPOINTS, PHASES, lineupState, type LineupState } from '@/animations/scrollPhases'
 import { FLAVORS } from '@/content/flavors'
 import { motion, type SlotRect } from '@/state/motion'
 import { CAN_HEIGHT, CAN_RADIUS } from './can/canShape'
+import { FLOAT_AMPLITUDE, FLOAT_SPEED } from './float'
 import { carouselPose, createPose, holdTurn } from './lineup/carousel'
 import { updateLineupLook } from './lineup/lineupLook'
 import { sceneState } from './sceneState'
@@ -31,11 +32,11 @@ import { sceneState } from './sceneState'
 // могут заходить под стеклянные карточки — это глубина, а не ошибка.
 const COMPOSITION_WIDTH = 3.1
 const COMPOSITION_HEIGHT = 4.75
-// В коллекции банка всегда собрана, и на узком высоком экране (телефон,
-// планшет стоя) слот невысокий — там композицию вписываем плотнее, иначе
-// банка вышла бы мелкой. На десктопе — как в первом экране: слоты глав
+// В коллекции банка всегда собрана, а в раскладке "столбиком" (телефон,
+// планшет) слот невысокий — там композицию вписываем плотнее, иначе банка
+// вышла бы мелкой. В десктопной сетке — как в первом экране: слоты глав
 // совпадают, и банка на стыке не меняет размер
-const LINEUP_PORTRAIT_HEIGHT = 4.1
+const LINEUP_STACKED_HEIGHT = 4.1
 // Собранная банка чуть крупнее разобранной — "герой" выходит вперёд
 const ASSEMBLED_GROWTH = 0.1
 
@@ -52,10 +53,6 @@ const PARALLAX_PITCH = 0.08
 const DETAIL_HEIGHT = 0.7
 const DETAIL_WIDTH = 0.3
 const DETAIL_MAX_ZOOM = 1.6
-
-// Общее покачивание собранной банки — то же "парение", что у кусков
-const FLOAT_AMPLITUDE = 0.05
-const FLOAT_SPEED = (Math.PI * 2) / 6.8
 
 const phase = (value: number, [from, to]: readonly [number, number]) => MathUtils.smoothstep(value, from, to)
 
@@ -75,8 +72,17 @@ const frame = {
 }
 
 // Производные значения кадра: сглаженный скролл и фазы обеих глав
-function updateSceneState(delta: number, width: number, height: number) {
-  sceneState.scroll = MathUtils.damp(sceneState.scroll, motion.scroll, 7, delta)
+// Сглаживание скролла — только когда движение разрешено. При "уменьшить
+// движение" сцена стоит ровно там, куда прокрутили: мгновенный переход из
+// меню не должен "пролистывать" по пути все банки и цвета
+const followScroll = (current: number, target: number, delta: number) =>
+  motion.reducedMotion ? target : MathUtils.damp(current, target, 7, delta)
+// Без движения переезды случаются разом на середине участка
+const snap = (value: number) => (value >= 0.5 ? 1 : 0)
+
+function updateSceneState(delta: number, width: number) {
+  const reduced = motion.reducedMotion
+  sceneState.scroll = followScroll(sceneState.scroll, motion.scroll, delta)
   sceneState.intro = motion.intro
   const scroll = sceneState.scroll
   // smoothstep уже даёт мягкий разгон и торможение — банка откликается
@@ -91,17 +97,15 @@ function updateSceneState(delta: number, width: number, height: number) {
   // Коллекция. При "уменьшить движение" банки не летают: переезд и смена
   // банки случаются разом на середине участка, а цвет и слова всё равно
   // сменяются плавно — это не движение, а перетекание цвета
-  sceneState.lineup = MathUtils.damp(sceneState.lineup, motion.lineup, 7, delta)
+  sceneState.lineup = followScroll(sceneState.lineup, motion.lineup, delta)
   const lineup = lineupState(sceneState.lineup, motion.lineupLayout, FLAVORS.length, frame.lineupState)
-  const reduced = motion.reducedMotion
-  const snap = (value: number) => (value >= 0.5 ? 1 : 0)
   sceneState.lineupEnter = lineup.enter
   sceneState.stageIn = reduced ? snap(lineup.enter) : phase(lineup.enter, LINEUP.handoff.stage)
   sceneState.queueIn = reduced ? snap(lineup.enter) : phase(lineup.enter, LINEUP.handoff.queue)
   sceneState.flavor = reduced ? Math.round(lineup.position) : lineup.position
   sceneState.flavorLook = lineup.position
   sceneState.flavorRaw = lineup.raw
-  sceneState.portrait = width < height
+  sceneState.stacked = width < LINEUP_BREAKPOINTS.stacked
   updateLineupLook()
 }
 
@@ -147,7 +151,7 @@ function applyLayout(group: Group, state: RootState) {
   // Коллекция: банка собрана, композиция вписывается в слот главы. На
   // десктопе слоты совпадают, и переезда не видно; на телефоне банка
   // плавно поднимается над плашкой и чуть подрастает
-  const lineup = fitSlot(frame.lineup, lineupSlot, width, height, unitsPerPx, sceneState.portrait ? LINEUP_PORTRAIT_HEIGHT : COMPOSITION_HEIGHT)
+  const lineup = fitSlot(frame.lineup, lineupSlot, width, height, unitsPerPx, sceneState.stacked ? LINEUP_STACKED_HEIGHT : COMPOSITION_HEIGHT)
   const stageIn = sceneState.stageIn
   group.position.set(MathUtils.lerp(heroX, lineup.x, stageIn), MathUtils.lerp(heroY, lineup.y, stageIn), 0)
   group.scale.setScalar(MathUtils.lerp(heroScale, lineup.fit * (1 + ASSEMBLED_GROWTH), stageIn))
@@ -177,7 +181,7 @@ export function CanRig({ can, surroundings, stage }: CanRigProps) {
 
   // Приоритет -30: самый первый в кадре — остальные читают готовый sceneState
   useFrame((state, delta) => {
-    updateSceneState(delta, state.size.width, state.size.height)
+    updateSceneState(delta, state.size.width)
     const layout = layoutRef.current
     const parallax = parallaxRef.current
     const carousel = carouselRef.current
@@ -199,7 +203,7 @@ export function CanRig({ can, surroundings, stage }: CanRigProps) {
 
     // Место в очереди коллекции: банка первого экрана — вкус номер 0.
     // Улетела за кадр — выключаем, чтобы не тратить на неё кадр
-    const pose = carouselPose(-sceneState.flavor, sceneState.portrait, frame.pose)
+    const pose = carouselPose(-sceneState.flavor, sceneState.stacked, frame.pose)
     carousel.visible = pose.visible
     sceneState.heroCanVisible = pose.visible
     carousel.position.set(pose.x, pose.y, pose.z)
