@@ -1,4 +1,4 @@
-import { TEXTURE_HEIGHT, TEXTURE_WIDTH, type Layers } from './canvas'
+import { TEXTURE_HEIGHT, TEXTURE_WIDTH, createContext2d, type Layers } from './canvas'
 
 // Рельеф этикетки → карта нормалей. Слой height содержит высоты (тиснение
 // когтя и надписей, купола капель, кристаллики инея); здесь из них
@@ -48,7 +48,8 @@ function blurHeights(source: Float32Array, width: number, height: number): Float
   return out
 }
 
-export function createNormalCanvas(layers: Layers): HTMLCanvasElement {
+// Возвращает холст карты нормалей: <canvas> на странице, OffscreenCanvas в воркере
+export function createNormalCanvas(layers: Layers): HTMLCanvasElement | OffscreenCanvas {
   const width = TEXTURE_WIDTH
   const height = TEXTURE_HEIGHT
   const source = layers.height.getImageData(0, 0, width, height).data
@@ -60,11 +61,7 @@ export function createNormalCanvas(layers: Layers): HTMLCanvasElement {
     heights[i] += (hash(i % width, (i / width) | 0) - 0.5) * GRAIN_HEIGHT
   }
 
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  if (!ctx) throw new Error('Canvas 2D is not available')
+  const ctx = createContext2d(width, height)
   const output = ctx.createImageData(width, height)
   const data = output.data
 
@@ -89,7 +86,7 @@ export function createNormalCanvas(layers: Layers): HTMLCanvasElement {
     }
   }
   ctx.putImageData(output, 0, 0)
-  return canvas
+  return ctx.canvas
 }
 
 // Зерно шероховатости: краска не бывает идеально ровной — лёгкий разброс

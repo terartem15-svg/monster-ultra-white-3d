@@ -7,13 +7,14 @@ import { useLenis } from '@/hooks/useLenis'
 import { usePointerTracking } from '@/hooks/usePointerTracking'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { Hero } from '@/sections/Hero/Hero'
+import { Lineup } from '@/sections/Lineup/Lineup'
 import { motion } from '@/state/motion'
 import { Scene } from '@/three/Scene'
 import styles from './App.module.css'
 
 // Композиция страницы: фиксированный 3D-canvas в фоне (three/Scene.tsx),
-// поверх — шапка и первый экран в обычном потоке документа, над всем —
-// прелоадер и кастомный курсор.
+// поверх — шапка и главы в обычном потоке документа (первый экран,
+// коллекция вкусов), над всем — прелоадер и кастомный курсор.
 //
 // Порядок запуска: прелоадер держится, пока сцена не соберётся (шрифты,
 // этикетка банки, шейдеры); затем он растворяется, стартует вступление
@@ -72,6 +73,7 @@ function App() {
       </div>
       <main id="main" className={styles.main} tabIndex={-1} inert={hidden}>
         <Hero />
+        <Lineup />
       </main>
       <Cursor />
       {!preloaderDone && <Preloader ready={sceneReady} onReveal={handleReveal} onDone={handlePreloaderDone} />}

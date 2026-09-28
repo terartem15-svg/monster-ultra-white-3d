@@ -9,6 +9,12 @@
   height: 380svh;
 }
 
+/* Фокус переносится сюда из меню — это точка старта для Tab, не элемент
+   управления, рамка вокруг всей главы не нужна */
+.hero:focus {
+  outline: none;
+}
+
 .viewport {
   position: sticky;
   top: 0;
@@ -183,6 +189,11 @@
   letter-spacing: -0.01em;
   color: var(--c-navy);
   white-space: nowrap;
+}
+
+/* Внутренний слой подписи — его гасит уход первого экрана (heroScroll.ts) */
+.outroInner {
+  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {

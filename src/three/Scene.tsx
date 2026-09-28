@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { NeutralToneMapping } from 'three'
+import { NeutralToneMapping, type DirectionalLight } from 'three'
 import { Backdrop } from './Backdrop'
 import { CalloutTracker } from './CalloutTracker'
 import { CanRig } from './CanRig'
@@ -8,6 +8,8 @@ import { Droplets } from './Droplets'
 import { StudioEnvironment } from './StudioEnvironment'
 import { SlicedCan } from './can/SlicedCan'
 import { IceCubes } from './ice/IceCubes'
+import { LineupCans } from './lineup/LineupCans'
+import { lineupLook } from './lineup/lineupLook'
 import styles from './Scene.module.css'
 
 // --- Камера и рендерер ---------------------------------------------------------
@@ -93,6 +95,22 @@ function ReadySignal({ onReady }: { onReady: () => void }) {
   return null
 }
 
+// Цветная подсветка коллекции: свет сбоку-сзади в цвет вкуса — по правому
+// краю банки бежит цветной блик, лёд ловит цветные искры. На первом экране
+// её сила ноль (lineup/lineupLook.ts), и картинка там прежняя. Свет есть в
+// сцене с самого начала: иначе его появление перекомпилировало бы шейдеры
+// всех материалов посреди скролла.
+function LineupLight() {
+  const lightRef = useRef<DirectionalLight>(null)
+  useFrame(() => {
+    const light = lightRef.current
+    if (!light) return
+    light.color.copy(lineupLook.rim)
+    light.intensity = lineupLook.rimIntensity
+  })
+  return <directionalLight ref={lightRef} position={[4.5, 3, -2.5]} intensity={0} />
+}
+
 interface SceneProps {
   onReady: () => void
 }
@@ -115,6 +133,7 @@ export function Scene({ onReady }: SceneProps) {
         <Suspense fallback={null}>
           <Backdrop />
           <StudioEnvironment />
+          <LineupLight />
           <CanRig
             can={
               <>
@@ -129,6 +148,7 @@ export function Scene({ onReady }: SceneProps) {
                 <Droplets />
               </>
             }
+            stage={<LineupCans />}
           />
           <ReadySignal onReady={onReady} />
         </Suspense>

@@ -1,0 +1,335 @@
+/* Цвет акцента текущего вкуса. Зарегистрированное свойство, а не просто
+   переменная: так браузер умеет плавно переливать цвет свечения при смене
+   вкуса (обычная переменная переключилась бы скачком) */
+@property --flavor-accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #4fb0e3;
+}
+
+/* --- Плашка ---------------------------------------------------------------------
+   Стекло и скос — как у карточек первого экрана (FeatureCard.module.css):
+   плашка стоит в левой колонке и "повёрнута" к банке. Свечение падает со
+   стороны банки и окрашено в цвет вкуса. Плашка — контейнер для запросов
+   @container: на планшете она широкая, и раскладка внутри меняется. */
+.panel {
+  --skew: 3.4deg;
+
+  position: relative;
+  container-type: inline-size;
+  transition: --flavor-accent 700ms var(--ease-soft);
+}
+
+.inner {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.8vh, 1.25rem);
+  padding: clamp(1.1rem, 2.6vh, 2rem) clamp(1.1rem, 1.9vw, 2rem);
+}
+
+.inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-card);
+  transform: skewY(var(--skew));
+  background:
+    radial-gradient(
+      120% 90% at 90% 84%,
+      color-mix(in srgb, var(--flavor-accent) 50%, transparent),
+      color-mix(in srgb, var(--flavor-accent) 14%, transparent) 50%,
+      transparent 74%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.4));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.75),
+    inset 0 1px 0 #ffffff,
+    var(--shadow-card);
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* Кант загорается цветом вкуса там, где свечение, — как край льда на свету */
+.inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1.25px;
+  border-radius: var(--radius-card);
+  transform: skewY(var(--skew));
+  background: radial-gradient(70% 70% at 90% 84%, color-mix(in srgb, var(--flavor-accent) 90%, #ffffff), transparent 72%);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* --- Верхняя строка: название главы и номер вкуса --------------------------------- */
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  font-size: clamp(0.85rem, 0.95vw, 0.95rem);
+  font-weight: 600;
+  color: var(--c-steel);
+}
+
+/* Номер в последовательности: текущий крупно, всего — мельче */
+.count {
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.countCurrent {
+  font-size: clamp(1.35rem, 1.9vw, 1.9rem);
+  color: var(--c-navy);
+}
+
+.countTotal {
+  margin-left: 0.15em;
+  font-size: clamp(0.85rem, 0.95vw, 0.95rem);
+  color: var(--c-text-muted);
+}
+
+/* --- Стопка вкусов -------------------------------------------------------------------
+   Все в одной ячейке сетки. Текущий виден; прошедшие ждут чуть выше,
+   будущие — чуть ниже, размытые и прозрачные. Уход быстрее прихода, приход
+   начинается с небольшой задержкой: слои почти не накладываются, а лёгкое
+   размытие склеивает смену в одно движение. */
+.stack {
+  display: grid;
+}
+
+/* Слой — колонка: название и подпись сверху, таблица прижата к низу. Слои
+   одной высоты (ячейка сетки), поэтому линейки таблицы у всех вкусов стоят
+   на одном месте — при смене вкуса меняются только цифры */
+.item {
+  display: flex;
+  flex-direction: column;
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  filter: blur(3px);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 260ms var(--ease-out),
+    filter 180ms var(--ease-out),
+    visibility 0s linear 260ms;
+}
+
+.item[data-state='before'] {
+  transform: translateY(-10px);
+}
+
+.item[data-state='after'] {
+  transform: translateY(12px);
+}
+
+.item[data-state='active'] {
+  opacity: 1;
+  visibility: visible;
+  filter: none;
+  transform: none;
+  transition:
+    opacity 320ms var(--ease-out) 90ms,
+    transform 420ms var(--ease-out) 90ms,
+    filter 320ms var(--ease-out) 90ms,
+    visibility 0s;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 2.55vw, 2.9rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--c-navy);
+  text-wrap: balance;
+}
+
+.tagline {
+  max-width: 30ch;
+  margin-top: 0.55rem;
+  margin-bottom: clamp(0.9rem, 2.2vh, 1.35rem);
+  font-size: clamp(0.94rem, 1.1vw, 1.08rem);
+  line-height: 1.4;
+  color: var(--c-steel);
+  text-wrap: pretty;
+}
+
+/* --- "С этикетки": маленькая таблица в духе Nutrition Facts ------------------------
+   Узкое начертание Archivo (ось ширины), жирная линейка над заголовком,
+   тонкие между строками и толстая внизу — как панель пищевой ценности на
+   самих банках. Цифры — моноширинные, по правому краю. */
+.facts {
+  margin-top: auto;
+  padding-top: 0.3rem;
+  border-top: 7px solid var(--c-navy);
+  color: var(--c-navy);
+}
+
+.factsTitle {
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--c-navy);
+  font-size: 1.02rem;
+  font-weight: 800;
+  font-stretch: 75%;
+  letter-spacing: -0.005em;
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.3rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-navy) 30%, transparent);
+}
+
+.fact:last-child {
+  border-bottom: 4px solid var(--c-navy);
+}
+
+.fact dt {
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-stretch: 87.5%;
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  font-stretch: 87.5%;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Пометка "демо" — всегда видна, мелко и спокойно */
+.note {
+  max-width: 34ch;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+  text-wrap: pretty;
+}
+
+/* --- Широкая плашка (планшет): название слева, таблица справа ----------------------- */
+@container (min-width: 34rem) {
+  .inner::before,
+  .inner::after {
+    transform: skewY(1deg);
+  }
+
+  /* Вторая строка гибкая: высокая таблица справа растягивает её, а не
+     строку с названием — подпись остаётся прямо под названием */
+  .item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.85fr);
+    grid-template-rows: auto 1fr;
+    column-gap: clamp(1.25rem, 3vw, 2.25rem);
+    align-items: start;
+  }
+
+  .tagline {
+    margin-bottom: 0;
+  }
+
+  .facts {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin-top: 0;
+  }
+
+  .note {
+    max-width: none;
+  }
+}
+
+/* --- Телефон: плотнее, чтобы банке осталось место ---------------------------------
+   Медиазапрос, а не @container: на десктопе колонка плашки даже уже, чем
+   экран телефона, но там над плашкой не нужно отвоёвывать место у банки.
+   Таблица остаётся таблицей, но строки ниже; пометка "демо" — в одну-две
+   короткие строки мелким кеглем. */
+@media (max-width: 699px) {
+  .inner {
+    gap: 0.45rem;
+    padding: 0.85rem 1rem 0.8rem;
+  }
+
+  .inner::before,
+  .inner::after {
+    transform: skewY(1.6deg);
+  }
+
+  .countCurrent {
+    font-size: 1.2rem;
+  }
+
+  .name {
+    font-size: 1.6rem;
+  }
+
+  .tagline {
+    margin-top: 0.3rem;
+    margin-bottom: 0.55rem;
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .facts {
+    padding-top: 0.2rem;
+    border-top-width: 5px;
+  }
+
+  .factsTitle {
+    padding-bottom: 0.15rem;
+    font-size: 0.86rem;
+  }
+
+  .fact {
+    padding-block: 0.12rem;
+  }
+
+  .fact:last-child {
+    border-bottom-width: 3px;
+  }
+
+  .fact dt {
+    font-size: 0.78rem;
+  }
+
+  .fact dd {
+    font-size: 0.84rem;
+  }
+
+  .note {
+    max-width: none;
+    font-size: 0.64rem;
+    line-height: 1.35;
+  }
+}
+
+/* Без движения: смена вкуса — только прозрачность, без сдвига и размытия */
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .item[data-state='before'],
+  .item[data-state='after'],
+  .item[data-state='active'] {
+    filter: none;
+    transform: none;
+  }
+}

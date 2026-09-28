@@ -6,7 +6,8 @@ import { Euler, Quaternion as ThreeQuaternion, Vector3 as ThreeVector3 } from 't
 // своей точке-якорю, а якорь медленно ходит вверх-вниз. Из-за инерции
 // кубик отстаёт от якоря и чуть перелетает его — движение получается живым,
 // а не синусоидой из учебника. Курсор толкает лёд (сила + закрутка), куски
-// банки — кинематические цилиндры, о которые лёд честно ударяется.
+// банки и банки коллекции — кинематические цилиндры, о которые лёд честно
+// ударяется (улетающая банка коллекции расталкивает кубики на пути).
 //
 // Все координаты — в локальном пространстве группы льда (внутри CanRig),
 // то есть в тех же единицах, что и банка.
@@ -154,6 +155,12 @@ export class IceWorld {
     if (!body) return
     body.position.set(position.x, position.y, position.z)
     body.quaternion.set(quaternion.x, quaternion.y, quaternion.z, quaternion.w)
+  }
+
+  // Банка за кадром или ещё не на сцене — её тело лёд не расталкивает
+  setPieceActive(index: number, active: boolean) {
+    const body = this.pieces[index]
+    if (body) body.collisionResponse = active
   }
 
   step(delta: number, pointer: PointerInput, flow: FlowInput) {

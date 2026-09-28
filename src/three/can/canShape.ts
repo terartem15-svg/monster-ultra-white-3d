@@ -1,4 +1,5 @@
 import { BufferAttribute, LatheGeometry, MathUtils, Vector2, type BufferGeometry } from 'three'
+import { CAN_HEIGHT, CAN_RADIUS } from './canDimensions'
 
 // Форма банки Monster 500 мл и её нарезка на куски — чистая геометрия и
 // числа, без React. Всё в условных единицах сцены: 1 ед. ≈ 53 мм, поэтому
@@ -7,8 +8,9 @@ import { BufferAttribute, LatheGeometry, MathUtils, Vector2, type BufferGeometry
 
 // --- Габариты ------------------------------------------------------------------
 
-export const CAN_RADIUS = 0.62
-export const CAN_HEIGHT = 3.2
+// Радиус и высота — в canDimensions.ts (их читает и воркер этикеток);
+// отсюда реэкспорт, чтобы остальной код брал всю форму банки из одного места
+export { CAN_HEIGHT, CAN_RADIUS }
 
 // Нижний "каблук": от опорного кольца дно плавно выходит на полный радиус.
 // Опорное кольцо — самая нижняя точка банки, на нём она стоит.

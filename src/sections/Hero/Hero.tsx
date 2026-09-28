@@ -4,7 +4,15 @@ import { FeatureCard } from '@/components/FeatureCard/FeatureCard'
 import { FEATURES, HERO_TITLE_LINES, OUTRO_CAPTION, SCROLL_CUE } from '@/content/site'
 import { createHeroScroll } from '@/animations/heroScroll'
 import { useSlotTracking } from '@/hooks/useSlotTracking'
+import { motion, type SlotRect } from '@/state/motion'
+import { registerSectionAnchor } from '@/state/navigation'
 import styles from './Hero.module.css'
+
+// Замер слота уходит прямо в общий store; функция одна на модуль — хуку
+// не нужно пересоздавать наблюдатели на каждый рендер
+const writeSlot = (rect: SlotRect) => {
+  motion.slot = rect
+}
 
 // Первый экран. Раскладка блоков — как в основном референсе: слева
 // карточки 01 и 03, по центру 3D-банка, справа заголовок-вопрос и карточки
@@ -18,9 +26,10 @@ import styles from './Hero.module.css'
 // в финале за банкой встаёт огромное ULTRA.
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
   const slotRef = useRef<HTMLDivElement>(null)
 
-  useSlotTracking(slotRef)
+  useSlotTracking(slotRef, viewportRef, writeSlot)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -28,9 +37,14 @@ export function Hero() {
     return createHeroScroll(section)
   }, [])
 
+  // Пункт меню Home и логотип ведут к самому верху страницы
+  useEffect(() => {
+    return registerSectionAnchor('top', { top: () => 0, element: () => sectionRef.current })
+  }, [])
+
   return (
-    <section id="top" ref={sectionRef} className={styles.hero} aria-labelledby="hero-title">
-      <div className={styles.viewport}>
+    <section id="top" ref={sectionRef} className={styles.hero} aria-labelledby="hero-title" tabIndex={-1}>
+      <div ref={viewportRef} className={styles.viewport}>
         <div className={styles.grid}>
           <div ref={slotRef} className={styles.stage} aria-hidden="true" />
 
@@ -67,8 +81,12 @@ export function Hero() {
 
         <Callouts />
 
+        {/* Две обёртки — два слоя анимации: p проявляется в финале,
+            span гаснет на стыке со следующей главой */}
         <p className={styles.outro} data-hero-outro>
-          {OUTRO_CAPTION}
+          <span className={styles.outroInner} data-hero-outro-exit>
+            {OUTRO_CAPTION}
+          </span>
         </p>
       </div>
     </section>

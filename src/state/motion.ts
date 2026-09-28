@@ -1,3 +1,5 @@
+import type { LineupLayout } from '@/animations/scrollPhases'
+
 // Общее изменяемое состояние "DOM ↔ 3D". Скролл, указатель и вступительная
 // анимация живут в DOM (GSAP, ScrollTrigger, слушатели окна), а читаются
 // каждый кадр в useFrame сцены. Обычный объект, а не React-state: значения
@@ -21,10 +23,17 @@ export const motion = {
   intro: 0,
   // Прогресс скролл-сцены героя 0..1 — его пишет ScrollTrigger (animations/heroScroll.ts)
   scroll: 0,
+  // Прогресс главы «Коллекция» 0..1 (animations/lineupScroll.ts) и её
+  // раскладка: на телефоне шаги короче, от этого зависит перевод прогресса
+  // в положение банок (animations/scrollPhases.ts)
+  lineup: 0,
+  lineupLayout: 'regular' as LineupLayout,
 
   // "Слот" под банку в CSS-пикселях окна: пустой блок в раскладке Hero, куда
   // сцена ставит 3D-композицию. Раскладку решает CSS, 3D под неё подстраивается.
   slot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
+  // Слот банки в главе «Коллекция» — там, где банка стоит, когда глава на экране
+  lineupSlot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
 
   // Системная настройка "уменьшить движение". Читается сразу при загрузке
   // модуля: сцене значение нужно уже на первом рендере (лёд либо влетает

@@ -37,12 +37,15 @@
   color: var(--c-text-muted);
   transition:
     color 200ms var(--ease-soft),
-    background-color 200ms var(--ease-soft);
+    background-color 200ms var(--ease-soft),
+    box-shadow 200ms var(--ease-soft);
 }
 
-/* Активная пилюля — "стеклянная": полупрозрачный белый, тонкий кант и
-   лёгкая холодная тень, как у активной кнопки в референсе, но в светлой гамме */
-.navLink[aria-current='page'] {
+/* Активная пилюля — пункт главы, которая сейчас на экране (aria-current
+   ставит Header по скроллу). Пилюля "стеклянная": полупрозрачный белый,
+   тонкий кант и лёгкая холодная тень, как у активной кнопки в референсе,
+   но в светлой гамме */
+.navLink[aria-current='true'] {
   color: var(--c-navy);
   font-weight: 600;
   background: linear-gradient(180deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.55));
@@ -235,7 +238,7 @@
   color: var(--c-text-muted);
 }
 
-.mobileLink[aria-current='page'] {
+.mobileLink[aria-current='true'] {
   color: var(--c-navy);
 }
 

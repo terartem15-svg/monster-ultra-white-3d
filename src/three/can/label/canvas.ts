@@ -1,4 +1,4 @@
-import { CAN_HEIGHT, CAN_RADIUS } from '../canShape'
+import { CAN_HEIGHT, CAN_RADIUS } from '../canDimensions'
 
 // Общая "бумага" этикетки: развёртка банки, раскладка по высоте, слои и
 // кисти. Все модули этикетки (орнамент, панели, конденсат) рисуют через
@@ -94,21 +94,33 @@ export interface Layers {
 
 export type LayerKind = keyof Layers
 
+// Холст слоя. На странице — обычный <canvas>, в Web Worker (этикетки вкусов
+// коллекции рисуются там, чтобы не подвешивать скролл) — OffscreenCanvas.
+// Его 2D-контекст умеет всё, чем пользуются модули этикетки (фигуры,
+// градиенты, Path2D, getImageData), поэтому дальше он идёт под общим типом
+// CanvasRenderingContext2D, а не расползается union-типом по всему коду.
+//
 // willReadFrequently: холст рисуется процессором (растр Skia), а не через
 // GPU. Этикетка рисуется один раз, а слои потом читаются (getImageData) —
 // на CPU это предсказуемо быстро на любой машине. С GPU-холстом на
 // компьютере без нормальной видеокарты (программный рендер) те же тысячи
 // фигур рисовались бы минутами.
-function createLayer(): CanvasRenderingContext2D {
-  const canvas = document.createElement('canvas')
-  canvas.width = TEXTURE_WIDTH
-  canvas.height = TEXTURE_HEIGHT
-  const context = canvas.getContext('2d', { willReadFrequently: true })
+export function createContext2d(width: number, height: number): CanvasRenderingContext2D {
+  let context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    context = canvas.getContext('2d', { willReadFrequently: true })
+  } else {
+    context = new OffscreenCanvas(width, height).getContext('2d', { willReadFrequently: true })
+  }
   if (!context) throw new Error('Canvas 2D is not available')
-  return context
+  return context as CanvasRenderingContext2D
 }
 
 export function createLayers(): Layers {
+  const createLayer = () => createContext2d(TEXTURE_WIDTH, TEXTURE_HEIGHT)
   const layers = { color: createLayer(), surface: createLayer(), height: createLayer() }
   // Рельеф начинается с ровного нуля
   layers.height.fillStyle = '#000000'

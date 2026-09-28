@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent } from 'react'
 import { Logo } from '@/components/Logo/Logo'
 import { useLenis } from '@/hooks/useLenis'
-import { HEADER_ACTIONS, NAV_LINKS } from '@/content/site'
+import { HEADER_ACTIONS, NAV_LINKS, type NavLink } from '@/content/site'
+import { getActiveSection, hasSectionAnchor, navigateToSection, subscribeActiveSection } from '@/state/navigation'
 import styles from './Header.module.css'
 
 // Шапка по раскладке референса: логотип слева, меню-пилюли (Home активна),
@@ -10,11 +11,15 @@ import styles from './Header.module.css'
 //
 // data-intro — метки для вступительной анимации (animations/intro.ts):
 // элементы шапки мягко опускаются сверху друг за другом.
+//
+// Пункты меню ведут к главам плавным скроллом (state/navigation.ts), а
+// подсвечен (aria-current) пункт главы, которая сейчас на экране.
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const firstLinkRef = useRef<HTMLAnchorElement>(null)
   const lenis = useLenis()
+  const activeSection = useSyncExternalStore(subscribeActiveSection, getActiveSection, () => 'top' as const)
 
   // Открытое меню: фокус на первую ссылку, Escape закрывает и возвращает
   // фокус на кнопку. Контент под панелью выключен (inert) — Tab не уходит
@@ -43,9 +48,38 @@ export function Header() {
 
   const closeMenu = () => setMenuOpen(false)
 
+  // Ссылка на главу: вместо прыжка по якорю — плавный скролл к её началу.
+  // Без зарегистрированной главы (About, пока нет футера) ссылка остаётся
+  // обычным якорем.
+  const handleSectionLink = (event: MouseEvent<HTMLAnchorElement>, link: NavLink) => {
+    if (!link.section || !hasSectionAnchor(link.section)) return
+    event.preventDefault()
+    navigateToSection(link.section, lenis)
+  }
+
+  // Из мобильного меню — сначала закрыть панель: пока она открыта, скролл
+  // стоит, а контент под ней inert и не примет фокус. Переход — кадром позже,
+  // когда эффект меню уже всё вернул.
+  const handleMobileLink = (event: MouseEvent<HTMLAnchorElement>, link: NavLink) => {
+    closeMenu()
+    if (!link.section || !hasSectionAnchor(link.section)) return
+    event.preventDefault()
+    const section = link.section
+    requestAnimationFrame(() => navigateToSection(section, lenis))
+  }
+
+  const currentFor = (link: NavLink) => (link.section && link.section === activeSection ? 'true' : undefined)
+
   return (
     <header className={styles.header}>
-      <a className={styles.brand} href="#top" aria-label="Monster Ultra White, home" translate="no" data-intro="header">
+      <a
+        className={styles.brand}
+        href="#top"
+        aria-label="Monster Ultra White, home"
+        translate="no"
+        data-intro="header"
+        onClick={(event) => handleSectionLink(event, NAV_LINKS[0])}
+      >
         <Logo />
       </a>
 
@@ -53,7 +87,12 @@ export function Header() {
         <ul className={styles.navList}>
           {NAV_LINKS.map((link) => (
             <li key={link.label} data-intro="header">
-              <a className={styles.navLink} href={link.href} aria-current={link.current ? 'page' : undefined}>
+              <a
+                className={styles.navLink}
+                href={link.href}
+                aria-current={currentFor(link)}
+                onClick={(event) => handleSectionLink(event, link)}
+              >
                 {link.label}
               </a>
             </li>
@@ -100,8 +139,8 @@ export function Header() {
                   ref={index === 0 ? firstLinkRef : undefined}
                   className={styles.mobileLink}
                   href={link.href}
-                  aria-current={link.current ? 'page' : undefined}
-                  onClick={closeMenu}
+                  aria-current={currentFor(link)}
+                  onClick={(event) => handleMobileLink(event, link)}
                 >
                   {link.label}
                 </a>

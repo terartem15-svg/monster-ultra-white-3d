@@ -1,3 +1,5 @@
+import type { SectionId } from '@/state/navigation'
+
 // Тексты первого экрана — в одном месте, отдельно от вёрстки. Сайт на
 // английском (по брифу); копирайт сухой и конкретный: что это за продукт и
 // чем он отличается, без маркетинговой воды.
@@ -5,14 +7,16 @@
 export interface NavLink {
   label: string
   href: string
-  current?: boolean
+  // Глава, к которой ведёт пункт: её видимость подсвечивает пункт в меню
+  section?: SectionId
 }
 
 // Вкладка продуктов названа Lineup — линейка вкусов: коротко, понятно и
-// читается в пилюле меню так же легко, как Home и About
+// читается в пилюле меню так же легко, как Home и About. About ведёт в
+// футер, которого пока нет, — у него ещё нет главы.
 export const NAV_LINKS: NavLink[] = [
-  { label: 'Home', href: '#top', current: true },
-  { label: 'Lineup', href: '#lineup' },
+  { label: 'Home', href: '#top', section: 'top' },
+  { label: 'Lineup', href: '#lineup', section: 'lineup' },
   { label: 'About', href: '#about' },
 ]
 

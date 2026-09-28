@@ -12,10 +12,13 @@ import {
   Vector3,
   type BufferGeometry,
   type Group,
+  type Object3D,
 } from 'three'
+import { FLAVORS } from '@/content/flavors'
 import { motion } from '@/state/motion'
-import { CAN_PIECES, CAN_RADIUS } from '../can/canShape'
-import { canPieceGroups, sceneState } from '../sceneState'
+import { CAN_HEIGHT, CAN_PIECES, CAN_RADIUS } from '../can/canShape'
+import { lineupLook } from '../lineup/lineupLook'
+import { canPieceGroups, lineupCanActive, lineupCanColliders, sceneState } from '../sceneState'
 import { createBubblesGeometry, createCracksGeometry, createIceChipGeometry, createIceCubeGeometry } from './iceGeometry'
 import { createIceSurface } from './iceSurface'
 import { IceWorld, type IceCubeSpec } from './iceWorld'
@@ -104,6 +107,14 @@ const CUBES: IceCubeSpec[] = [
 // Лёд "отпускается" к якорям, когда куски банки уже начали всплывать
 const RELEASE_AT = 0.28
 
+// Тела, о которые ударяется лёд: пять кусков банки первого экрана, затем по
+// целой банке на каждый следующий вкус коллекции (номер тела = 5 + вкус − 1)
+const COLLIDERS = [
+  ...CAN_PIECES.map((piece) => ({ radius: CAN_RADIUS, height: piece.y1 - piece.y0 })),
+  ...FLAVORS.slice(1).map(() => ({ radius: CAN_RADIUS, height: CAN_HEIGHT })),
+]
+const FIRST_LINEUP_COLLIDER = CAN_PIECES.length - 1
+
 // --- Материалы ---------------------------------------------------------------------------
 
 // Лёд: физическое пропускание света (transmission) — сквозь кубик видны
@@ -185,6 +196,19 @@ const frame = {
   parentQuaternion: new Quaternion(),
 }
 
+// Кинематическое тело следует за куском банки или банкой коллекции: мировая
+// матрица объекта → локальное пространство льда (group). Родительский
+// поворот уже обращён в frame.parentQuaternion
+function followCollider(world: IceWorld, group: Group, object: Object3D | null | undefined, index: number, active: boolean) {
+  world.setPieceActive(index, Boolean(object) && active)
+  if (!object || !active) return
+  object.getWorldPosition(frame.worldPosition)
+  object.getWorldQuaternion(frame.worldQuaternion)
+  group.worldToLocal(frame.worldPosition)
+  frame.worldQuaternion.premultiply(frame.parentQuaternion)
+  world.setPiece(index, frame.worldPosition, frame.worldQuaternion)
+}
+
 export function IceCubes() {
   const groupRef = useRef<Group>(null)
   const cubeRefs = useRef<(Group | null)[]>([])
@@ -210,11 +234,7 @@ export function IceCubes() {
   // лёд сразу стоит на местах — без влёта из-за краёв кадра.
   const worldRef = useRef<IceWorld | null>(null)
   useEffect(() => {
-    const world = new IceWorld(
-      CUBES,
-      CAN_PIECES.map((piece) => ({ radius: CAN_RADIUS, height: piece.y1 - piece.y0 })),
-      motion.reducedMotion,
-    )
+    const world = new IceWorld(CUBES, COLLIDERS, motion.reducedMotion)
     worldRef.current = world
     return () => {
       world.dispose()
@@ -242,17 +262,19 @@ export function IceCubes() {
 
     if (sceneState.intro > RELEASE_AT) world.release()
 
-    // Кинематические тела кусков — из мировых матриц видимых кусков,
-    // переведённых в локальное пространство льда
+    // Кинематические тела — из мировых матриц видимых кусков и банок,
+    // переведённых в локальное пространство льда. Банка за кадром тело
+    // выключает: иначе лёд "бился" бы о невидимое
     group.getWorldQuaternion(frame.parentQuaternion).invert()
-    canPieceGroups.forEach((piece, index) => {
-      if (!piece) return
-      piece.getWorldPosition(frame.worldPosition)
-      piece.getWorldQuaternion(frame.worldQuaternion)
-      group.worldToLocal(frame.worldPosition)
-      frame.worldQuaternion.premultiply(frame.parentQuaternion)
-      world.setPiece(index, frame.worldPosition, frame.worldQuaternion)
-    })
+    for (let index = 0; index < CAN_PIECES.length; index++) {
+      followCollider(world, group, canPieceGroups[index], index, sceneState.heroCanVisible)
+    }
+    for (let flavor = 1; flavor < FLAVORS.length; flavor++) {
+      followCollider(world, group, lineupCanColliders[flavor], FIRST_LINEUP_COLLIDER + flavor, lineupCanActive[flavor] ?? false)
+    }
+
+    // Толща льда окрашивается в цвет текущего вкуса
+    materials.ice.attenuationColor.copy(lineupLook.ice)
 
     // Курсор: луч из камеры через точку указателя, пересечённый с
     // плоскостью z = 0 группы льда. Скорость — производная по кадрам.

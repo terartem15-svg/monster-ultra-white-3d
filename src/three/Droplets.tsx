@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { MathUtils, Matrix4, MeshPhysicalMaterial, Quaternion, SphereGeometry, Vector3, type InstancedMesh } from 'three'
+import { lineupLook } from './lineup/lineupLook'
 import { sceneState } from './sceneState'
 import { createRandom, randomRange } from './utils/random'
 
@@ -109,6 +110,8 @@ export function Droplets() {
       mesh.setMatrixAt(index, matrix)
     })
     mesh.instanceMatrix.needsUpdate = true
+    // Вода окрашивается вместе со льдом — в цвет текущего вкуса
+    material.attenuationColor.copy(lineupLook.droplet)
   })
 
   return <instancedMesh ref={meshRef} args={[geometry, material, COUNT]} frustumCulled={false} dispose={null} />

@@ -1,0 +1,113 @@
+/* --- Секция и "прилипающий" экран ------------------------------------------
+   Высота = экран + скролл главы. Длина скролла приходит из TS
+   (animations/scrollPhases.ts → Lineup.tsx) числом svh: тайминги банок и
+   высота секции считаются из одних и тех же чисел.
+
+   margin-top: -100svh — секция начинается на экран раньше конца первого
+   экрана: её sticky-блок прилипает ровно в момент финала Hero, и банка из
+   финала сразу становится первой в коллекции. До этого содержимое главы
+   скрыто (animations/lineupScroll.ts), а сама секция не ловит указатель,
+   чтобы не перекрывать первый экран. */
+.lineup {
+  position: relative;
+  z-index: var(--z-content);
+  height: calc(100vh + var(--lineup-scroll) * 1vh);
+  height: calc(100svh + var(--lineup-scroll) * 1svh);
+  margin-top: -100vh;
+  margin-top: -100svh;
+  pointer-events: none;
+}
+
+/* Фокус переносится сюда из меню — это точка старта для Tab, не элемент
+   управления, рамка вокруг всей главы не нужна */
+.lineup:focus {
+  outline: none;
+}
+
+.viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* --- Сетка (десктоп) -----------------------------------------------------------
+   Та же сетка, что у первого экрана (Hero.module.css): слот банки в центре
+   совпадает с её слотом в финале Hero, и на стыке глав банка не сдвигается
+   ни на пиксель. Слева — плашка вкуса на месте левых карточек, справа —
+   свободная колонка: там в глубине стоит очередь следующих банок. */
+.grid {
+  --hero-inset: calc(var(--page-gutter) + 3.5vw);
+
+  position: absolute;
+  inset: calc(var(--header-height) + clamp(0.5rem, 3vh, 2.5rem)) var(--hero-inset) clamp(2.5rem, 7vh, 4.5rem);
+  display: grid;
+  grid-template-columns: [left] var(--column-width) [center] minmax(0, 1fr) [right] var(--column-width);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.stage {
+  grid-column: center;
+  grid-row: 1;
+  margin-inline: clamp(0.5rem, 1.2vw, 1.5rem);
+  margin-block: calc(-1 * clamp(0.5rem, 2vh, 1.5rem)) 0;
+}
+
+.panelSlot {
+  grid-column: left;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+}
+
+/* Шкала — внизу по центру, там же, где подпись финала первого экрана: под
+   собранной банкой это место свободно */
+.railSlot {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.4rem, 1.6vh, 1.25rem);
+  width: min(30rem, 42vw);
+  translate: -50% 0;
+}
+
+/* Всё интерактивное — только когда глава на экране (до этого GSAP держит
+   обёртки в visibility: hidden, и указатель проходит насквозь) */
+.panelSlot,
+.railSlot {
+  pointer-events: auto;
+}
+
+/* --- Планшет: банка сверху, плашка под ней, шкала внизу --------------------- */
+@media (max-width: 999px) {
+  .grid {
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) calc(clamp(0.4rem, 1.6vh, 1.25rem) + 3.25rem);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    row-gap: clamp(0.5rem, 1.6vh, 1rem);
+  }
+
+  .stage {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .panelSlot {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+  }
+
+  .railSlot {
+    width: min(34rem, calc(100% - 2 * var(--page-gutter)));
+  }
+}
+
+/* --- Телефон: та же схема, глава короче (шаги скролла — в scrollPhases) ------- */
+@media (max-width: 699px) {
+  .lineup {
+    height: calc(100vh + var(--lineup-scroll-compact) * 1vh);
+    height: calc(100svh + var(--lineup-scroll-compact) * 1svh);
+  }
+}

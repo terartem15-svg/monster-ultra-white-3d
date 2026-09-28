@@ -1,0 +1,151 @@
+/* --- Шкала --------------------------------------------------------------------
+   Отметки стоят по центрам равных ячеек; линия и путь кольца идут от центра
+   первой ячейки до центра последней. Высота шкалы = зона нажатия (44 px). */
+.rail {
+  --cell: calc(100% / var(--count));
+
+  position: relative;
+  height: 2.75rem;
+}
+
+.track {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--cell) / 2);
+  right: calc(var(--cell) / 2);
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--c-navy) 14%, transparent);
+  overflow: hidden;
+}
+
+/* Пройденная часть — scaleX пишет скролл, только transform */
+.fill {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--c-navy) 55%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* Путь кольца: ширина = расстояние от первой отметки до последней, и
+   translateX(t * 100%) ставит кольцо на долю t этого пути */
+.travel {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--cell) / 2);
+  width: calc(100% - var(--cell));
+  height: 0;
+  pointer-events: none;
+}
+
+.ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  border: 1.5px solid var(--c-navy);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.35);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(4px);
+  translate: -50% -50%;
+}
+
+.list {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--count), minmax(0, 1fr));
+  height: 100%;
+}
+
+.item {
+  display: flex;
+  justify-content: center;
+}
+
+/* --- Отметка-кнопка ------------------------------------------------------------- */
+.notch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out);
+}
+
+.notch:active {
+  transform: scale(0.94);
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--notch-color);
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 1px 3px rgb(24 64 96 / 0.25);
+  transition: transform 220ms var(--ease-out);
+}
+
+.notch[aria-current='true'] .dot {
+  transform: scale(1.3);
+}
+
+/* Название над отметкой: на мыши — при наведении, с клавиатуры — при фокусе.
+   Скрыто прозрачностью, а не display: none, — остаётся именем кнопки. */
+.tip {
+  position: absolute;
+  bottom: calc(100% + 0.2rem);
+  left: 50%;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--c-navy);
+  white-space: nowrap;
+  background: rgb(255 255 255 / 0.85);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  translate: -50% 4px;
+  pointer-events: none;
+  transition:
+    opacity 150ms var(--ease-out),
+    translate 150ms var(--ease-out);
+}
+
+.notch:focus-visible {
+  outline-offset: -4px;
+}
+
+.notch:focus-visible .tip {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .notch:hover .tip {
+    opacity: 1;
+    translate: -50% 0;
+  }
+
+  .notch:hover .dot {
+    transform: scale(1.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tip {
+    translate: -50% 0;
+  }
+}

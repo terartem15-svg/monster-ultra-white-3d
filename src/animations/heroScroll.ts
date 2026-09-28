@@ -20,6 +20,7 @@ export function createHeroScroll(section: HTMLElement): () => void {
   const select = (selector: string) => Array.from(section.querySelectorAll<HTMLElement>(selector))
   const cue = select('[data-hero-cue]')
   const outro = select('[data-hero-outro]')
+  const outroExit = select('[data-hero-outro-exit]')
   const title = select('[data-hero-title]')
   const leftCards = select('[data-hero-card="left"]')
   const rightCards = select('[data-hero-card="right"]')
@@ -78,8 +79,24 @@ export function createHeroScroll(section: HTMLElement): () => void {
     addOutro(timeline)
   })
 
+  // Стык со следующей главой: когда первый экран отлипает и уезжает вверх,
+  // подпись финала гаснет за первую четверть экрана — иначе она проплыла бы
+  // поверх банки, которая остаётся на месте и становится первой в коллекции.
+  // Отдельный триггер: он живёт уже после конца скролл-сцены.
+  const exit = gsap.fromTo(
+    outroExit,
+    { autoAlpha: 1 },
+    {
+      autoAlpha: 0,
+      ease: 'none',
+      scrollTrigger: { trigger: section, start: 'bottom bottom', end: 'bottom 75%', scrub: true },
+    },
+  )
+
   return () => {
     media.revert()
+    exit.scrollTrigger?.kill()
+    exit.kill()
     motion.scroll = 0
   }
 }
