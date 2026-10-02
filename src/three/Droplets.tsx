@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { MathUtils, Matrix4, MeshPhysicalMaterial, Quaternion, SphereGeometry, Vector3, type InstancedMesh } from 'three'
+import { smoothstep } from '@/utils/smoothstep'
 import { lineupLook } from './lineup/lineupLook'
 import { sceneState } from './sceneState'
 import { createRandom, randomRange } from './utils/random'
@@ -9,7 +10,10 @@ import { createRandom, randomRange } from './utils/random'
 // брифу), остались только капли: каждая идёт по своей наклонной орбите
 // вокруг оси банки и заодно покачивается вверх-вниз — проходя перед банкой,
 // капля преломляет этикетку, за банкой — прячется. Все капли — один
-// InstancedMesh: один вызов отрисовки на все капли.
+// InstancedMesh: один вызов отрисовки на все капли. В главах «Холод» и
+// «Состав» капли исчезают — сцена расчищается (sceneState.clear): ночью на
+// тёмном фоне прозрачные капли читались бы пустыми кольцами (там вместо них
+// морозный пар и ледяная пыль, three/cold/*), а в «Составе» летают капсулы.
 
 const COUNT = 46
 
@@ -89,6 +93,10 @@ export function Droplets() {
     if (!mesh) return
     const time = state.clock.elapsedTime
     const { spread, intro, calm } = sceneState
+    // Капли «высыхают» в первой половине расчистки сцены
+    const present = 1 - smoothstep(sceneState.clear, 0, 0.6)
+    mesh.visible = present > 0
+    if (!mesh.visible) return
     const { matrix, position, scale, quaternion } = frameScratch
 
     droplets.forEach((drop, index) => {
@@ -102,7 +110,7 @@ export function Droplets() {
       const y = drop.height + Math.sin(time * drop.bobSpeed + drop.phase) * drop.bobAmplitude * calm + x * drop.tilt
 
       const appear = MathUtils.smoothstep(intro, drop.delay, drop.delay + 0.25)
-      const size = drop.radius * appear
+      const size = drop.radius * appear * present
       position.set(x, y, z)
       // Капля чуть вытянута по вертикали — как в полёте
       scale.set(size, size * 1.12, size)

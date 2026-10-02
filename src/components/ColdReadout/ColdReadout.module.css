@@ -1,0 +1,217 @@
+/* --- Табло ---------------------------------------------------------------------
+   Крупное число без подложки — прямо на ночном небе: подпись сверху, число,
+   под ним состояние поверхности. Число — широкий Archivo, как надписи на
+   банке и слова за банкой в коллекции. */
+.readout {
+  --frost: 0;
+
+  display: grid;
+  justify-items: start;
+  gap: clamp(0.4rem, 1.1vh, 0.75rem);
+  color: var(--c-text-night);
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-night-muted);
+}
+
+/* --- Число: колёса счётчика ----------------------------------------------------
+   Высота колеса — одна цифра (1em при line-height 1), лента цифр внутри
+   сдвигается по вертикали (translateY пишет скролл). Цифры табличные — все
+   одной ширины, число не «дышит», пока крутится. */
+.value {
+  display: flex;
+  align-items: flex-start;
+  margin-left: -0.04em;
+  font-size: clamp(5.5rem, min(10.5vw, 17vh), 11rem);
+  font-weight: 800;
+  font-stretch: 125%;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  /* В мороз число светится холодом — тень растёт вместе с инеем */
+  filter: drop-shadow(0 0 calc(0.05em + var(--frost) * 0.16em) rgb(143 211 255 / calc(0.22 + var(--frost) * 0.3)));
+}
+
+/* Старший разряд или минус. Ширину (схлопывается ниже десяти) пишет скролл */
+.lead {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.wheel {
+  display: block;
+  height: 1em;
+  overflow: hidden;
+  /* Уходящая и приходящая цифры тают у краёв колеса, а не обрезаются:
+     поля над и под глифом пустые, стоящую цифру маска не задевает */
+  mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 88%, transparent 100%);
+}
+
+/* Лента цифр. Заливка — ледяной градиент по каждой цифре (фон повторяется
+   с шагом в цифру и едет вместе с лентой): сверху почти белый, снизу —
+   голубой лёд; в мороз — белее и с инеистым зерном */
+.strip {
+  display: block;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.4 -0.55'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #ffffff 92%, var(--c-ice-bright)) 8%,
+      color-mix(in srgb, var(--c-ice-bright), #ffffff calc(var(--frost) * 75%)) 92%
+    );
+  background-size:
+    6rem 6rem,
+    100% 1em;
+  background-repeat: repeat;
+  background-blend-mode: soft-light, normal;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  will-change: transform;
+}
+
+.digit {
+  display: block;
+  height: 1em;
+  text-align: center;
+}
+
+.minus {
+  position: absolute;
+  top: 0;
+  right: 0.04em;
+  opacity: 0;
+  background: linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--c-ice-bright), #ffffff calc(var(--frost) * 75%)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.degree {
+  margin-left: 0.04em;
+  font-size: 0.5em;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--c-ice-bright);
+}
+
+/* --- Состояние поверхности ------------------------------------------------------- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  height: 2rem;
+  padding-inline: 0.75rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-night);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 0 0 1px var(--c-line-night);
+  backdrop-filter: blur(8px);
+}
+
+/* Точка — цвет состояния: сухо — тускло, конденсат — вода, мороз — лёд.
+   На смене состояния она один раз вспыхивает (новый ключ — новая анимация) */
+.dot {
+  --dot: color-mix(in srgb, var(--c-frost) 40%, transparent);
+
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dot) 25%, transparent);
+  animation: dot-pulse 900ms var(--ease-out);
+  transition:
+    background-color 400ms var(--ease-soft),
+    box-shadow 400ms var(--ease-soft);
+}
+
+.status[data-state='condensing'] .dot {
+  --dot: var(--c-ice);
+}
+
+.status[data-state='freezing'] .dot {
+  --dot: var(--c-ice-bright);
+}
+
+.status[data-state='frosted'] .dot {
+  --dot: #ffffff;
+
+  box-shadow:
+    0 0 0 3px rgb(255 255 255 / 0.2),
+    0 0 12px rgb(143 211 255 / 0.9);
+}
+
+.statusText {
+  animation: status-in 420ms var(--ease-out) both;
+}
+
+@keyframes dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--dot) 70%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
+@keyframes status-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes status-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .statusText {
+    animation-name: status-fade;
+  }
+
+  .dot {
+    animation: none;
+  }
+}
+
+/* --- Телефон: число меньше, в одну строку с состоянием -------------------------- */
+@media (max-width: 699px), (max-height: 520px) and (orientation: landscape) {
+  .readout {
+    grid-template-columns: auto 1fr;
+    align-items: end;
+    column-gap: 0.9rem;
+  }
+
+  .label {
+    grid-column: 1 / -1;
+    font-size: 0.68rem;
+  }
+
+  .value {
+    font-size: clamp(3.4rem, min(21vw, 22vh), 5.5rem);
+  }
+
+  .status {
+    justify-self: start;
+    margin-bottom: 0.45em;
+    height: 1.75rem;
+    font-size: 0.7rem;
+  }
+}

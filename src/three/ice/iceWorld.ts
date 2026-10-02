@@ -46,6 +46,9 @@ export interface FlowInput {
   detail: number
   // Множитель амплитуды покачивания (reduced motion, скролл)
   calm: number
+  // 0..1 — глава «Состав»: лёд уходит далеко за края кадра и не возвращается,
+  // пока глава на экране, — место вокруг банки занимают капсулы и метки
+  away: number
 }
 
 // --- Параметры поведения ---------------------------------------------------------
@@ -67,6 +70,10 @@ const POINTER_PUSH = 2.2
 const POINTER_REPEL = 2.6
 const POINTER_MAX_FORCE = 14
 const MAX_SPEED = 5
+// Насколько якоря расходятся, когда лёд уходит за кадр (множители к
+// координатам якоря): с запасом на широкие экраны
+const AWAY_X = 4.5
+const AWAY_Y = 1.3
 
 // Фиксированный шаг симуляции; рендер берёт интерполированные позиции.
 // Подшагов на кадр хватает, чтобы физика шла в реальном времени даже при
@@ -94,7 +101,7 @@ export class IceWorld {
   readonly pieces: Body[]
   private released = false
   private pointer: PointerInput = { position: null, velocity: new ThreeVector3() }
-  private flow: FlowInput = { spread: 0, detail: 0, calm: 1 }
+  private flow: FlowInput = { spread: 0, detail: 0, calm: 1, away: 0 }
 
   constructor(cubeSpecs: IceCubeSpec[], pieceSpecs: IcePieceSpec[], startAtRest: boolean) {
     this.world = new World({ gravity: new Vec3(0, 0, 0) })
@@ -175,7 +182,7 @@ export class IceWorld {
   // cannon сбрасывает накопленные силы после каждого подшага
   private applyForces = () => {
     const time = this.world.time
-    const { spread, detail, calm } = this.flow
+    const { spread, detail, calm, away } = this.flow
     const { force, point, torque, error, inverse } = scratch
 
     for (const { spec, body, restQuaternion } of this.cubes) {
@@ -184,9 +191,10 @@ export class IceWorld {
       const [bobAmplitude, bobPeriod, bobPhase] = spec.bob
       const bob = this.released ? Math.sin((time / bobPeriod) * Math.PI * 2 + bobPhase) * bobAmplitude * calm : 0
       // На скролле якоря расходятся к краям и чуть назад — лёд уступает
-      // место собранной банке, а в сцене деталей уходит за края кадра
-      const targetX = ax * (1 + spread * 0.85 + detail * 1.1)
-      const targetY = ay * (1 + spread * 0.3 + detail * 0.4) + bob
+      // место собранной банке, а в сцене деталей и в «Составе» уходит за
+      // края кадра
+      const targetX = ax * (1 + spread * 0.85 + detail * 1.1 + away * AWAY_X)
+      const targetY = ay * (1 + spread * 0.3 + detail * 0.4 + away * AWAY_Y) + bob
       const targetZ = az - spread * 0.6
 
       force.set(

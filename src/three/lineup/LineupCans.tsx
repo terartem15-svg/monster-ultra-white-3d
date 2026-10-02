@@ -23,6 +23,10 @@ import { FlavorLabelStore } from './flavorLabels'
 // ждёт за кадром в глубине и выплывает, когда этикетка готова. Если до
 // готовности банка успела стать текущей, на ней заглушка — чистый алюминий
 // без печати (редкость: этикетки заказываются заранее, ещё на первом экране).
+//
+// Последняя банка (Ultra Baltic) остаётся на сцене в главе «Холод», а на
+// стыке с «Составом» улетает, как улетали банки коллекции: на её место
+// возвращается Ultra White (sceneState.encore, CanRig.tsx).
 
 const COUNT = FLAVORS.length
 
@@ -227,7 +231,7 @@ export function LineupCans() {
   // Приоритет -20: после CanRig (-30), до физики льда (-10) — ей нужны уже
   // поставленные банки
   useFrame((state, delta) => {
-    const { flavor, flavorRaw, queueIn, stacked, calm, tiltX, tiltY } = sceneState
+    const { flavor, flavorRaw, queueIn, stacked, lowScreen, calm, tiltX, tiltY, coldTurn, encore } = sceneState
 
     // Этикетки: пока идёт вступление, ничего не заказываем — странице и так
     // есть чем заняться; дальше — банки рядом с текущей (на первом экране —
@@ -251,9 +255,10 @@ export function LineupCans() {
       if (!can) continue
       const ready = store?.isReady(index) ? 1 : 0
       readyIn[index] = motion.reducedMotion ? ready : MathUtils.damp(readyIn[index], ready, READY_SPEED, delta)
-      const queued = index - flavor + (1 - queueIn) * QUEUE_OFFSET
+      // encore сдвигает всю очередь ещё на одно место: текущая банка улетает
+      const queued = index - flavor + (1 - queueIn) * QUEUE_OFFSET - encore
       const rel = queued + (1 - readyIn[index]) * NOT_READY_OFFSET * MathUtils.smoothstep(queued, 0.3, 1)
-      carouselPose(rel, stacked, pose)
+      carouselPose(rel, stacked && !lowScreen, pose)
       can.pose.visible = pose.visible
       lineupCanActive[index] = pose.visible
       if (!pose.visible) continue
@@ -263,7 +268,9 @@ export function LineupCans() {
       can.pose.rotation.set(pose.rotX, 0, pose.rotZ)
       const follow = 1 - Math.min(1, Math.abs(rel)) * QUEUE_FOLLOW
       can.tilt.rotation.set(tiltX, tiltY * follow, 0)
-      can.spin.rotation.y = pose.rotY + (motion.reducedMotion ? 0 : holdTurn(flavorRaw, index))
+      // В «Холоде» текущая (последняя) банка ещё и медленно доворачивается
+      // под скроллом главы; до главы доворот нулевой
+      can.spin.rotation.y = pose.rotY + (motion.reducedMotion ? 0 : holdTurn(flavorRaw, index)) + coldTurn
     }
   }, -20)
 

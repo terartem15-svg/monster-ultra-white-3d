@@ -6,15 +6,22 @@ import { playIntro } from '@/animations/intro'
 import { useLenis } from '@/hooks/useLenis'
 import { usePointerTracking } from '@/hooks/usePointerTracking'
 import { useReducedMotion } from '@/hooks/useReducedMotion'
+import { Cold } from '@/sections/Cold/Cold'
+import { Final } from '@/sections/Final/Final'
+import { Footer } from '@/sections/Footer/Footer'
 import { Hero } from '@/sections/Hero/Hero'
+import { Inside } from '@/sections/Inside/Inside'
 import { Lineup } from '@/sections/Lineup/Lineup'
 import { motion } from '@/state/motion'
 import { Scene } from '@/three/Scene'
 import styles from './App.module.css'
 
-// Композиция страницы: фиксированный 3D-canvas в фоне (three/Scene.tsx),
-// поверх — шапка и главы в обычном потоке документа (первый экран,
-// коллекция вкусов), над всем — прелоадер и кастомный курсор.
+// Композиция страницы: 3D-canvas в фоне (three/Scene.tsx), поверх — шапка
+// и главы в обычном потоке документа (первый экран, коллекция вкусов,
+// «Холод», «Состав», финальный экран), под ними — футер, над всем —
+// прелоадер и кастомный курсор. Canvas и главы — в общем контейнере: холст
+// стоит на месте, пока идут главы, и уезжает вверх вместе с финальным
+// экраном, когда снизу наезжает футер.
 //
 // Порядок запуска: прелоадер держится, пока сцена не соберётся (шрифты,
 // этикетка банки, шейдеры); затем он растворяется, стартует вступление
@@ -47,6 +54,17 @@ function App() {
     else lenis.stop()
   }, [lenis, introDone])
 
+  // Без Lenis («уменьшить движение» — нативный скролл) держим прокрутку сами:
+  // иначе колесо под прелоадером увело бы страницу с первого экрана
+  useEffect(() => {
+    if (lenis || introDone) return
+    const root = document.documentElement
+    root.style.overflow = 'hidden'
+    return () => {
+      root.style.overflow = ''
+    }
+  }, [lenis, introDone])
+
   const handleSceneReady = useCallback(() => setSceneReady(true), [])
   const handlePreloaderDone = useCallback(() => setPreloaderDone(true), [])
 
@@ -67,14 +85,20 @@ function App() {
       <a className={styles.skipLink} href="#main">
         Skip to content
       </a>
-      <Scene onReady={handleSceneReady} />
-      <div className={styles.chrome} inert={hidden}>
-        <Header />
+      <div className={styles.stage}>
+        <Scene onReady={handleSceneReady} />
+        <div className={styles.chrome} inert={hidden}>
+          <Header />
+        </div>
+        <main id="main" className={styles.main} tabIndex={-1} inert={hidden}>
+          <Hero />
+          <Lineup />
+          <Cold />
+          <Inside />
+          <Final />
+        </main>
       </div>
-      <main id="main" className={styles.main} tabIndex={-1} inert={hidden}>
-        <Hero />
-        <Lineup />
-      </main>
+      <Footer inert={hidden} />
       <Cursor />
       {!preloaderDone && <Preloader ready={sceneReady} onReveal={handleReveal} onDone={handlePreloaderDone} />}
     </div>

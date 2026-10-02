@@ -2,7 +2,13 @@ import { useEffect, useRef, useState, useSyncExternalStore, type MouseEvent } fr
 import { Logo } from '@/components/Logo/Logo'
 import { useLenis } from '@/hooks/useLenis'
 import { HEADER_ACTIONS, NAV_LINKS, type NavLink } from '@/content/site'
-import { getActiveSection, hasSectionAnchor, navigateToSection, subscribeActiveSection } from '@/state/navigation'
+import {
+  getActiveSection,
+  hasSectionAnchor,
+  navigateToSection,
+  subscribeActiveSection,
+  type AnchorId,
+} from '@/state/navigation'
 import styles from './Header.module.css'
 
 // Логотип ведёт туда же, куда пункт главы "top" (Home), где бы тот ни стоял в
@@ -17,7 +23,8 @@ const HOME_LINK: NavLink = NAV_LINKS.find((link) => link.section === 'top') ?? {
 // элементы шапки мягко опускаются сверху друг за другом.
 //
 // Пункты меню ведут к главам плавным скроллом (state/navigation.ts), а
-// подсвечен (aria-current) пункт главы, которая сейчас на экране.
+// подсвечен (aria-current) пункт главы, которая сейчас на экране. Кнопки
+// справа ведут к демо-панелям финального экрана (sections/Final).
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -37,52 +44,54 @@ export function Header() {
         menuButtonRef.current?.focus()
       }
     }
-    const main = document.getElementById('main')
+    // Под панелью — главы и футер
+    const content = [document.getElementById('main'), document.getElementById('site-footer')]
     document.addEventListener('keydown', onKey)
     document.documentElement.style.overflow = 'hidden'
-    if (main) main.inert = true
+    for (const element of content) if (element) element.inert = true
     lenis?.stop()
     return () => {
       document.removeEventListener('keydown', onKey)
       document.documentElement.style.overflow = ''
-      if (main) main.inert = false
+      for (const element of content) if (element) element.inert = false
       lenis?.start()
     }
   }, [menuOpen, lenis])
 
   const closeMenu = () => setMenuOpen(false)
 
-  // Ссылка на главу: вместо прыжка по якорю — плавный скролл к её началу.
-  // Без зарегистрированной главы (About, пока нет футера) ссылка остаётся
+  // Ссылка на главу, демо-панель или футер: вместо прыжка по якорю —
+  // плавный скролл к её началу. Без зарегистрированной точки ссылка остаётся
   // обычным якорем.
-  const handleSectionLink = (event: MouseEvent<HTMLAnchorElement>, link: NavLink) => {
-    if (!link.section || !hasSectionAnchor(link.section)) return
+  const handleAnchor = (event: MouseEvent<HTMLAnchorElement>, id: AnchorId | undefined) => {
+    if (!id || !hasSectionAnchor(id)) return
     event.preventDefault()
-    navigateToSection(link.section, lenis)
+    navigateToSection(id, lenis)
   }
 
   // Из мобильного меню — сначала закрыть панель: пока она открыта, скролл
   // стоит, а контент под ней inert и не примет фокус. Переход — кадром позже,
   // когда эффект меню уже всё вернул.
-  const handleMobileLink = (event: MouseEvent<HTMLAnchorElement>, link: NavLink) => {
+  const handleMobileAnchor = (event: MouseEvent<HTMLAnchorElement>, id: AnchorId | undefined) => {
     closeMenu()
-    if (!link.section || !hasSectionAnchor(link.section)) return
+    if (!id || !hasSectionAnchor(id)) return
     event.preventDefault()
-    const section = link.section
-    requestAnimationFrame(() => navigateToSection(section, lenis))
+    requestAnimationFrame(() => navigateToSection(id, lenis))
   }
 
   // Логотип ведёт к началу страницы. Если открыто мобильное меню — сначала
   // закрыть его, как у пунктов меню, иначе страница уехала бы под панелью
   const handleBrand = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (menuOpen) handleMobileLink(event, HOME_LINK)
-    else handleSectionLink(event, HOME_LINK)
+    if (menuOpen) handleMobileAnchor(event, HOME_LINK.section)
+    else handleAnchor(event, HOME_LINK.section)
   }
 
   const currentFor = (link: NavLink) => (link.section && link.section === activeSection ? 'true' : undefined)
 
   return (
-    <header className={styles.header}>
+    // data-menu-open — для темы: над светлой панелью меню логотип остаётся
+    // тёмным и в тёмной главе (Header.module.css)
+    <header className={styles.header} data-menu-open={menuOpen}>
       <a
         className={styles.brand}
         href="#top"
@@ -102,7 +111,7 @@ export function Header() {
                 className={styles.navLink}
                 href={link.href}
                 aria-current={currentFor(link)}
-                onClick={(event) => handleSectionLink(event, link)}
+                onClick={(event) => handleAnchor(event, link.section)}
               >
                 {link.label}
               </a>
@@ -116,12 +125,20 @@ export function Header() {
           конфликтует — финальная позиция "застревает" */}
       <div className={styles.actions}>
         <span className={styles.actionSlot} data-intro="header">
-          <a className={`${styles.button} ${styles.buttonLight}`} href={HEADER_ACTIONS.store.href}>
+          <a
+            className={`${styles.button} ${styles.buttonLight}`}
+            href={HEADER_ACTIONS.store.href}
+            onClick={(event) => handleAnchor(event, HEADER_ACTIONS.store.panel)}
+          >
             {HEADER_ACTIONS.store.label}
           </a>
         </span>
         <span className={styles.actionSlot} data-intro="header">
-          <a className={`${styles.button} ${styles.buttonIce}`} href={HEADER_ACTIONS.join.href}>
+          <a
+            className={`${styles.button} ${styles.buttonIce}`}
+            href={HEADER_ACTIONS.join.href}
+            onClick={(event) => handleAnchor(event, HEADER_ACTIONS.join.panel)}
+          >
             {HEADER_ACTIONS.join.label}
           </a>
         </span>
@@ -151,7 +168,7 @@ export function Header() {
                   className={styles.mobileLink}
                   href={link.href}
                   aria-current={currentFor(link)}
-                  onClick={(event) => handleMobileLink(event, link)}
+                  onClick={(event) => handleMobileAnchor(event, link.section)}
                 >
                   {link.label}
                 </a>
@@ -160,10 +177,18 @@ export function Header() {
           </ul>
         </nav>
         <div className={styles.mobileActions}>
-          <a className={`${styles.button} ${styles.buttonLight}`} href={HEADER_ACTIONS.store.href} onClick={closeMenu}>
+          <a
+            className={`${styles.button} ${styles.buttonLight}`}
+            href={HEADER_ACTIONS.store.href}
+            onClick={(event) => handleMobileAnchor(event, HEADER_ACTIONS.store.panel)}
+          >
             {HEADER_ACTIONS.store.label}
           </a>
-          <a className={`${styles.button} ${styles.buttonIce}`} href={HEADER_ACTIONS.join.href} onClick={closeMenu}>
+          <a
+            className={`${styles.button} ${styles.buttonIce}`}
+            href={HEADER_ACTIONS.join.href}
+            onClick={(event) => handleMobileAnchor(event, HEADER_ACTIONS.join.panel)}
+          >
             {HEADER_ACTIONS.join.label}
           </a>
         </div>

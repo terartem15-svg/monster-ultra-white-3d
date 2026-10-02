@@ -6,7 +6,6 @@ import '@fontsource/rubik-dirt/latin-400.css'
 import type { LabelMaps } from './canMaterials'
 import { paintMetal, paintPrintEdges } from './label/base'
 import { LAYOUT, SURFACE, TEXTURE_WIDTH, createLayers, paint, toCanvasY, type Layers } from './label/canvas'
-import { paintCondensation } from './label/condensation'
 import { paintOrnament } from './label/ornament'
 import { paintPanels } from './label/panels'
 import { addPaintGrain, createNormalCanvas } from './label/relief'
@@ -22,11 +21,11 @@ import { addPaintGrain, createNormalCanvas } from './label/relief'
 // получаются три текстуры:
 //  - color — цвет этикетки (sRGB);
 //  - surface — материал: G = шероховатость, B = металличность. Орнамент,
-//    фольга и голый алюминий — металл, краска — нет, капли — гладкая вода;
-//  - normal — рельеф: тиснение когтя и надписей, капли конденсата, иней,
-//    зерно краски.
+//    фольга и голый алюминий — металл, краска — нет;
+//  - normal — рельеф: тиснение когтя и надписей, зерно краски.
 //
-// Порядок слоёв — снизу вверх: основа → орнамент → надписи → конденсат.
+// Порядок слоёв — снизу вверх: основа → орнамент → надписи. Этикетка
+// «сухая»: капли и иней кладёт поверх неё шейдер (cold/coldSurface.ts).
 
 // --- Основа: голый алюминий и жемчужная краска --------------------------------------
 
@@ -84,7 +83,6 @@ export function loadCanLabel(): Promise<CanLabel> {
     paintBase(layers)
     paintOrnament(layers)
     paintPanels(layers)
-    paintCondensation(layers)
     addPaintGrain(layers)
     const normal = createNormalCanvas(layers)
     return {

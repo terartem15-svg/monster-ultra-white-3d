@@ -52,8 +52,11 @@ export function Cursor() {
     }
 
     const onOver = (event: PointerEvent) => {
-      const target = event.target instanceof Element ? event.target.closest(INTERACTIVE) : null
-      root.dataset.hover = target ? 'true' : 'false'
+      const element = event.target instanceof Element ? event.target : null
+      root.dataset.hover = element?.closest(INTERACTIVE) ? 'true' : 'false'
+      // Над тёмным блоком (футер) кольцо светлое, даже если шапка ещё над
+      // светлой главой и тема страницы светлая
+      root.dataset.tone = element?.closest('[data-cursor-tone="dark"]') ? 'dark' : 'light'
     }
     const onDown = () => {
       root.dataset.pressed = 'true'

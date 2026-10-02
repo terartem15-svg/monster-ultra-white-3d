@@ -305,3 +305,74 @@
     scroll-snap-align: start;
   }
 }
+
+/* --- Низкий экран (телефон лёжа): слева заголовок и лента карточек, справа банка ---
+   Столбиком сюда не помещается: карточки наезжали на заголовок и друг на друга.
+   Колонки — те же, что у коллекции в этом режиме: на стыке банка не прыгает */
+@media (max-height: 520px) and (orientation: landscape) {
+  .grid {
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) 0.6rem;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.4rem;
+  }
+
+  .title {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+    font-size: clamp(1.7rem, 8.6vh, 2.5rem);
+  }
+
+  .line {
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  .stage {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    margin: 0;
+  }
+
+  .features {
+    display: flex;
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+    gap: 0.6rem;
+    padding: 0.35rem 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* Лента тает у края колонки, а не обрывается о банку */
+    mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
+  }
+
+  .features::-webkit-scrollbar {
+    display: none;
+  }
+
+  .features > li:nth-child(n) {
+    flex: 0 0 min(15rem, 38vw);
+    grid-column: auto;
+    grid-row: auto;
+    scroll-snap-align: start;
+  }
+
+  .cue {
+    display: none;
+  }
+
+  /* Подпись финала — под заголовком, а не под банкой посередине */
+  .outro {
+    left: var(--page-gutter);
+    translate: none;
+    bottom: 0.9rem;
+  }
+}

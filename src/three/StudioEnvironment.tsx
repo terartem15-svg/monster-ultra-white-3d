@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import {
   BackSide,
@@ -87,7 +87,10 @@ export function StudioEnvironment() {
   const gl = useThree((state) => state.gl)
   const scene = useThree((state) => state.scene)
 
-  useEffect(() => {
+  // Layout-эффект, а не обычный: первый кадр R3F может прийти раньше
+  // обычных эффектов, и все материалы в нём собрались бы без окружения —
+  // а потом ещё раз, с ним (лишние программы шейдеров при загрузке)
+  useLayoutEffect(() => {
     const studio = new Scene()
     studio.add(createRoom(), ...PANELS.map(createPanel))
 

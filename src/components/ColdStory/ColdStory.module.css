@@ -1,0 +1,140 @@
+/* --- Текст главы -----------------------------------------------------------------
+   Без подложки: светлый текст прямо на ночном небе. Сверху — тонкая ледяная
+   линия во всю ширину блока, под ней название главы и номер остановки */
+.story {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.85rem, 2vh, 1.35rem);
+  padding-top: 0.9rem;
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--c-ice-bright), rgb(143 211 255 / 0)) 1;
+  color: var(--c-text-night);
+}
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-night-muted);
+}
+
+.count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-night-muted);
+}
+
+.countCurrent {
+  color: var(--c-text-night);
+}
+
+/* --- Стопка остановок ------------------------------------------------------------
+   Как в плашках прошлых глав: текущая видна; прошедшие ждут чуть выше,
+   будущие — чуть ниже, размытые; уход быстрее прихода */
+.stack {
+  display: grid;
+}
+
+.item {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  visibility: hidden;
+  filter: blur(4px);
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 280ms var(--ease-out),
+    filter 200ms var(--ease-out),
+    visibility 0s linear 280ms;
+}
+
+.item[data-state='before'] {
+  transform: translateY(-12px);
+}
+
+.item[data-state='after'] {
+  transform: translateY(14px);
+}
+
+.item[data-state='active'] {
+  opacity: 1;
+  visibility: visible;
+  filter: none;
+  transform: none;
+  transition:
+    opacity 380ms var(--ease-out) 100ms,
+    transform 520ms var(--ease-out) 100ms,
+    filter 380ms var(--ease-out) 100ms,
+    visibility 0s;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, min(3vw, 5.4vh), 3.3rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.text {
+  max-width: 30ch;
+  margin-top: 0.75rem;
+  font-size: clamp(0.95rem, 1.1vw, 1.08rem);
+  line-height: 1.5;
+  color: var(--c-text-night-muted);
+  text-wrap: pretty;
+}
+
+.note {
+  max-width: 34ch;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--c-frost) 52%, transparent);
+  text-wrap: pretty;
+}
+
+/* --- Телефон и низкий экран: плотнее ------------------------------------------------ */
+@media (max-width: 699px), (max-height: 520px) and (orientation: landscape) {
+  .story {
+    gap: 0.5rem;
+    padding-top: 0.6rem;
+  }
+
+  .title {
+    font-size: 1.65rem;
+  }
+
+  .text {
+    max-width: none;
+    margin-top: 0.35rem;
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+
+  .note {
+    max-width: none;
+    font-size: 0.64rem;
+  }
+}
+
+/* Без движения: смена остановки — только прозрачность, без сдвига и размытия */
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .item[data-state='before'],
+  .item[data-state='after'],
+  .item[data-state='active'] {
+    filter: none;
+    transform: none;
+  }
+}

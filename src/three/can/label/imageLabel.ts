@@ -1,13 +1,13 @@
 import { smoothstep } from '@/utils/smoothstep'
 import { paintMetal, paintPrintEdges } from './base'
 import { LAYOUT, PANEL_CENTER, TEXTURE_WIDTH, createContext2d, createLayers, toCanvasY, uToX, type Layers } from './canvas'
-import { paintCondensation } from './condensation'
 import { addPaintGrain, createNormalCanvas } from './relief'
 
 // Этикетка вкуса из присланной развёртки (решение из PLAN.md, раздел 6.1):
 // банка у всех вкусов наша, процедурная, меняется только картинка печати.
-// Материал, рельеф, конденсат и иней — те же, что у Ultra White первого
-// экрана, поэтому все банки коллекции одного качества.
+// Материал и рельеф — те же, что у Ultra White первого экрана, а конденсат
+// и иней кладёт поверх любой этикетки шейдер (cold/coldSurface.ts), поэтому
+// все банки коллекции одного качества.
 //
 // Развёртка — плоская картинка без материала, поэтому слои surface и height
 // выводятся из самой картинки (это приближение, оно подбирается по вкусу):
@@ -245,8 +245,7 @@ export function buildImageLabel(image: LabelImage, spec: ImageLabelSpec): ImageL
   deriveSurface(layers, spec, place)
   paintPrintEdges(layers)
 
-  // Дальше — как у Ultra White: конденсат и иней, зерно краски, нормали
-  paintCondensation(layers)
+  // Дальше — как у Ultra White: зерно краски и нормали
   addPaintGrain(layers)
   const normal = createNormalCanvas(layers)
   return { color: layers.color.canvas, surface: layers.surface.canvas, normal }

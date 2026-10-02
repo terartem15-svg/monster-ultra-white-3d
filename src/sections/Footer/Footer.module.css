@@ -1,0 +1,400 @@
+/* --- Футер ---------------------------------------------------------------------------
+   Последний экран: глубокая ночь, темнее «Холода», сверху — отсвет северного
+   сияния, по верхнему краю — ледяная кромка. Не ниже окна: когда футер
+   долистали до верха, он закрывает сцену целиком, и та перестаёт рисовать
+   кадры (animations/footerScroll.ts). Коготь обрезан краями футера. */
+.footer {
+  position: relative;
+  z-index: var(--z-content);
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--c-text-night);
+  background:
+    radial-gradient(70% 55% at 82% 0%, color-mix(in srgb, var(--c-aurora) 55%, transparent), transparent 72%),
+    radial-gradient(55% 45% at 12% 4%, color-mix(in srgb, var(--c-aurora-violet) 70%, transparent), transparent 74%),
+    linear-gradient(180deg, var(--c-night-mid) 0%, color-mix(in srgb, var(--c-night-mid) 45%, var(--c-night-deep)) 48%, var(--c-night-deep) 100%);
+}
+
+/* Кромка льда: тонкая светлая линия по верху, ярче к середине */
+.footer::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-ice-bright) 70%, transparent) 50%, transparent);
+}
+
+/* Замер высоты sticky-экранов (100svh): на этом пути финал уезжает за верх
+   окна — по нему считается, сколько футера на экране */
+.probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100vh;
+  height: 100svh;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* --- Коготь --------------------------------------------------------------------------
+   Огромный силуэт справа, в отсвете сияния: ледяная заливка и тонкий
+   светлый контур тают книзу — к ссылкам коготь почти растворяется. Выше
+   футера: низ уходит за край, как будто коготь поднимается из-под страницы
+   (параллакс — footerScroll.ts) */
+.claw {
+  position: absolute;
+  top: 3%;
+  right: -7vw;
+  z-index: -1;
+  width: min(48vw, 46rem);
+  height: 128%;
+  pointer-events: none;
+}
+
+.clawSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.clawStroke {
+  stroke-width: 1.25px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* --- Раскладка -----------------------------------------------------------------------
+   Сверху — About: заголовок слева, текст справа; ниже — пометка о демо,
+   три колонки ссылок и нижняя строка. Нижняя строка прижата к низу футера */
+.inner {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: clamp(1.1rem, 2.6vh, 2.5rem);
+  padding: calc(var(--header-height) + clamp(1rem, 3.6vh, 3rem)) var(--page-gutter) clamp(0.9rem, 2.2vh, 1.75rem);
+}
+
+/* Блок About — цель пункта меню: фокус ставится сюда, рамка не нужна.
+   Слева, под заголовком — текст в две колонки; справа место когтю */
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.6vh, 2rem);
+  max-width: min(100%, 50rem);
+}
+
+.about:focus {
+  outline: none;
+}
+
+.lead {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 2.2vh, 1.4rem);
+}
+
+/* Подпись над заголовком — как у текста «Холода»: ледяная линия и
+   разрядка */
+.eyebrow {
+  align-self: flex-start;
+  padding-top: 0.8rem;
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--c-ice-bright), rgb(143 211 255 / 0)) 1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-night-muted);
+}
+
+/* Nunito, как заголовки глав, — крупно; заливка — ледяной градиент, как у
+   цифр табло «Холода» */
+.title {
+  max-width: 13ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, min(5.6vw, 7.6vh), 6rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  color: var(--c-frost);
+  background: linear-gradient(180deg, var(--c-frost) 30%, var(--c-ice-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-wrap: balance;
+}
+
+.aboutText {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem clamp(1.25rem, 2.6vw, 2.5rem);
+  font-size: clamp(0.95rem, 1.05vw, 1.05rem);
+  line-height: 1.55;
+  color: var(--c-text-night-muted);
+  text-wrap: pretty;
+}
+
+/* --- Пометка о демо ------------------------------------------------------------------
+   Отдельная полоса во всю ширину: тёмное стекло с ледяным кантом, слева —
+   ледяная метка, как у демо-панелей финала */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 1.6vw, 1.5rem);
+  padding: clamp(0.9rem, 2vh, 1.2rem) clamp(1rem, 1.8vw, 1.6rem);
+  border-radius: var(--radius-card);
+  background: linear-gradient(100deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.025));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--c-ice-bright) 22%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    var(--shadow-night);
+  backdrop-filter: blur(12px);
+}
+
+.badge {
+  flex: none;
+  padding: 0.38rem 0.8rem;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--c-navy);
+  background: linear-gradient(180deg, var(--c-ice-soft), var(--c-ice-bright));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+}
+
+.noticeText {
+  font-size: clamp(0.88rem, 1vw, 0.98rem);
+  line-height: 1.5;
+  color: var(--c-text-night);
+  text-wrap: pretty;
+}
+
+/* --- Колонки ссылок --------------------------------------------------------------------- */
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: clamp(1.5rem, 4vw, 4rem);
+  row-gap: 2rem;
+  padding-top: clamp(0.9rem, 2vh, 2rem);
+  border-top: 1px solid var(--c-line-night);
+}
+
+.column {
+  min-width: 0;
+}
+
+.columnTitle {
+  margin: 0 0 clamp(0.5rem, 1.4vh, 0.9rem);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-night-muted);
+}
+
+.links {
+  display: grid;
+  gap: 0.15rem;
+}
+
+/* Ссылка — текст с ледяной точкой, которая загорается при наведении */
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: clamp(0.15rem, 0.3vh, 0.3rem);
+  border-radius: 0.4rem;
+  font-size: clamp(0.98rem, 1.15vw, 1.12rem);
+  font-weight: 500;
+  color: var(--c-text-night);
+  transition: color 200ms var(--ease-soft);
+}
+
+.external {
+  flex: none;
+  width: 0.7em;
+  height: 0.7em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.6;
+  transition:
+    transform 220ms var(--ease-out),
+    opacity 200ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: var(--c-ice-bright);
+  }
+
+  .link:hover .external {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+}
+
+.stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Технологии — маленькие стеклянные пилюли */
+.stack li {
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--c-text-night);
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: inset 0 0 0 1px var(--c-line-night);
+}
+
+.type {
+  max-width: 34ch;
+  margin-top: 0.9rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--c-text-night-muted);
+}
+
+/* --- Нижняя строка ------------------------------------------------------------------------ */
+.bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: clamp(0.9rem, 2vh, 1.5rem);
+  border-top: 1px solid var(--c-line-night);
+}
+
+.copyright {
+  font-size: 0.85rem;
+  color: var(--c-text-night-muted);
+}
+
+/* «Наверх» — тёмная стеклянная пилюля, как кнопки шапки по форме */
+.toTop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.75rem;
+  padding-inline: 1.15rem;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--c-frost);
+  background: rgb(255 255 255 / 0.07);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--c-ice-bright) 26%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 220ms var(--ease-soft);
+}
+
+.toTop:active {
+  transform: scale(0.97);
+}
+
+.toTopIcon {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 220ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .toTop:hover {
+    background-color: rgb(255 255 255 / 0.12);
+  }
+
+  .toTop:hover .toTopIcon {
+    transform: translateY(-2px);
+  }
+}
+
+/* --- Планшет: коготь крупнее и правее ------------------------------------------------- */
+@media (max-width: 999px) {
+  .title {
+    font-size: clamp(2.4rem, 8vw, 4.5rem);
+  }
+
+  .claw {
+    top: 2%;
+    right: -20vw;
+    width: 70vw;
+  }
+}
+
+/* --- Телефон: всё в одну колонку, пометка — метка над текстом ------------------------------- */
+@media (max-width: 699px) {
+  .inner {
+    gap: 1.75rem;
+    padding-top: calc(var(--header-height) + 1.5rem);
+  }
+
+  .title {
+    font-size: clamp(2.2rem, 11vw, 3rem);
+  }
+
+  .aboutText {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notice {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* «Из чего собрано» — во всю ширину под двумя колонками ссылок */
+  .column:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .bottom {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .claw {
+    top: 1%;
+    right: -38vw;
+    width: 100vw;
+    opacity: 0.75;
+  }
+}
+
+/* Без движения: у ссылок не сдвигаются значки */
+@media (prefers-reduced-motion: reduce) {
+  .link:hover .external,
+  .toTop:hover .toTopIcon {
+    transform: none;
+  }
+}

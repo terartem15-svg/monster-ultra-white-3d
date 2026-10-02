@@ -1,0 +1,254 @@
+/* --- Панель ---------------------------------------------------------------------
+   Стекло и скос — как у карточек первого экрана (FeatureCard.module.css):
+   левая панель «повёрнута» к банке вправо, правая — влево, свечение падает со
+   стороны банки. Панель — контейнер для @container: на планшете она шире, на
+   десктопе — узкая колонка. */
+.panel {
+  --skew: 3.4deg;
+  --glow-x: 90%;
+  --glow-y: 82%;
+
+  position: relative;
+  height: 100%;
+  container-type: inline-size;
+}
+
+.panel[data-side='right'] {
+  --skew: -3.4deg;
+  --glow-x: 10%;
+  --glow-y: 84%;
+}
+
+.inner {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.7rem, 1.6vh, 1.1rem);
+  height: 100%;
+  padding: clamp(1.1rem, 2.6vh, 1.75rem) clamp(1.1rem, 1.7vw, 1.75rem);
+}
+
+.inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--radius-card);
+  transform: skewY(var(--skew));
+  background:
+    radial-gradient(120% 90% at var(--glow-x) var(--glow-y), rgb(84 178 234 / 0.5), rgb(150 210 244 / 0.15) 50%, transparent 74%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(165deg, rgb(255 255 255 / 0.84), rgb(255 255 255 / 0.46));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.75),
+    inset 0 1px 0 #ffffff,
+    var(--shadow-card);
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+/* Ледяной кант загорается там, где свечение, — как край льда на свету */
+.inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1.25px;
+  border-radius: var(--radius-card);
+  transform: skewY(var(--skew));
+  background: radial-gradient(70% 70% at var(--glow-x) var(--glow-y), rgb(110 196 242 / 0.95), transparent 72%);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* --- Шапка панели: название и метка Demo ----------------------------------------- */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 1.85vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--c-navy);
+}
+
+/* Метка — узкий Archivo прописными, как служебные надписи на банке: её
+   нельзя не заметить, но она не спорит с названием */
+.badge {
+  flex: none;
+  padding: 0.2rem 0.55rem 0.18rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-stretch: 87.5%;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--c-navy);
+  background: color-mix(in srgb, var(--c-ice-soft) 55%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-ice) 45%, transparent);
+}
+
+/* --- Поле с кнопкой ------------------------------------------------------------------ */
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-steel);
+}
+
+/* Пилюля: поле и кнопка внутри. Кант загорается льдом при фокусе в поле;
+   ошибка — тёмно-синий кант, без красного: палитра холодная */
+.control {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.3rem;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.78);
+  box-shadow:
+    inset 0 0 0 1px var(--c-line),
+    0 1px 2px rgb(24 64 96 / 0.06);
+  transition: box-shadow 200ms var(--ease-soft);
+}
+
+/* Кант фокуса — только когда фокус в поле: у кнопки своя рамка фокуса */
+.control:has(.input:focus) {
+  box-shadow:
+    inset 0 0 0 2px var(--c-ice),
+    0 6px 18px -10px rgb(46 150 210 / 0.6);
+}
+
+.control[data-invalid='true'] {
+  box-shadow: inset 0 0 0 2px var(--c-navy);
+}
+
+/* Рамку фокуса рисует пилюля целиком — у самого поля своей нет */
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 2.3rem;
+  padding: 0 0.15rem 0 0.75rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--c-navy);
+  background: transparent;
+}
+
+.input::placeholder {
+  color: var(--c-text-muted);
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+/* Кнопка — ледяная пилюля, как «Join the pack» в шапке */
+.submit {
+  flex: none;
+  height: 2.3rem;
+  padding-inline: 0.95rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--c-navy);
+  background: linear-gradient(180deg, #c3e8fa 0%, #86cbee 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.85),
+    inset 0 0 0 1px rgb(255 255 255 / 0.45),
+    0 8px 18px -10px rgb(46 150 210 / 0.75);
+  cursor: pointer;
+  transition:
+    transform 160ms var(--ease-out),
+    filter 220ms var(--ease-soft);
+}
+
+.submit:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .submit:hover {
+    filter: brightness(1.04) saturate(1.1);
+  }
+}
+
+/* Строка ошибки — место под неё есть всегда: появление текста не сдвигает панель */
+.error {
+  min-height: 1.15rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--c-navy);
+}
+
+/* Пометка «демо» — всегда видна, мелко и спокойно */
+.note {
+  margin-top: auto;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--c-text-muted);
+  text-wrap: pretty;
+}
+
+/* --- Широкая панель (планшет): скос мягче ----------------------------------------- */
+@container (min-width: 19rem) {
+  .inner::before,
+  .inner::after {
+    transform: skewY(calc(var(--skew) / 3));
+  }
+}
+
+/* --- Телефон и низкий экран: плотнее, подпись поля только для скринридера -------- */
+@media (max-width: 699px), (max-height: 520px) and (orientation: landscape) {
+  .inner {
+    gap: 0.55rem;
+    padding: 0.85rem 1rem 0.8rem;
+  }
+
+  .inner::before,
+  .inner::after {
+    transform: skewY(calc(var(--skew) / 2.5));
+  }
+
+  .title {
+    font-size: 1.35rem;
+  }
+
+  .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .input,
+  .submit {
+    height: 2.2rem;
+  }
+
+  .note {
+    font-size: 0.66rem;
+    line-height: 1.35;
+  }
+}

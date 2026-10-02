@@ -111,3 +111,33 @@
     height: calc(100svh + var(--lineup-scroll-compact) * 1svh);
   }
 }
+
+/* --- Низкий экран (телефон лёжа): плашка слева, банка справа, шкала внизу ----------
+   Столбиком сюда не помещается: плашка закрывала весь экран. Колонки — как у
+   первого экрана в этом режиме (банка справа), очередь в 3D — вбок
+   (sceneState.lowScreen) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .grid {
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) 2.9rem;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: 0.75rem;
+  }
+
+  .stage {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .panelSlot {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .railSlot {
+    bottom: 0.2rem;
+    width: min(30rem, 60vw);
+  }
+}

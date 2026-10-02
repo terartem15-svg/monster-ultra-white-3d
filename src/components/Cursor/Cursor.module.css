@@ -24,14 +24,19 @@
 /* Кольцо с тонкой обводкой. Лёгкая белая внешняя тень держит его видимым
    и на тёмном (надпись финала), и на светлом фоне. */
 .ring {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin: -1.25rem 0 0 -1.25rem;
+  --ring-size: 2.5rem;
+
+  width: var(--ring-size);
+  height: var(--ring-size);
+  margin: calc(var(--ring-size) / -2) 0 0 calc(var(--ring-size) / -2);
   border: 1px solid rgb(14 34 51 / 0.55);
   border-radius: 50%;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35);
   transition:
     transform 260ms var(--ease-out),
+    width 320ms var(--ease-out),
+    height 320ms var(--ease-out),
+    margin 320ms var(--ease-out),
     background-color 220ms var(--ease-soft),
     border-color 220ms var(--ease-soft);
 }
@@ -44,7 +49,22 @@
   background: var(--c-navy);
   transition:
     transform 200ms var(--ease-out),
-    opacity 200ms var(--ease-soft);
+    opacity 200ms var(--ease-soft),
+    background-color 220ms var(--ease-soft);
+}
+
+/* Тёмная глава («Холод», state/theme.ts) и тёмный футер (data-tone ставит
+   Cursor.tsx): кольцо и точка светлые, тонкая тёмная тень держит их
+   видимыми и над светлой банкой */
+:global(html[data-theme='dark']) .ring,
+.cursor[data-tone='dark'] .ring {
+  border-color: rgb(244 249 253 / 0.62);
+  box-shadow: 0 0 0 1px rgb(5 16 31 / 0.35);
+}
+
+:global(html[data-theme='dark']) .dot,
+.cursor[data-tone='dark'] .dot {
+  background: var(--c-frost);
 }
 
 /* Над ссылкой или кнопкой: кольцо растёт и наполняется льдом, точка прячется */
@@ -57,6 +77,21 @@
 .cursor[data-hover='true'] .dot {
   opacity: 0;
   transform: scale(0.5);
+}
+
+/* Финальный экран, пока его затягивает иней (state/frost.ts): кольцо — это
+   скребок, размером ровно с кисть, которой курсор протирает стекло. Размер
+   меняется шириной, а не масштабом: тонкий кант остаётся тонким. Над
+   кнопкой и при открытом меню кольцо снова обычное — там оно указывает, а
+   не протирает */
+:global(html[data-cursor='wipe']:not(:has([data-menu-open='true']))) .cursor:not([data-hover='true']) .ring {
+  --ring-size: var(--wipe-size, 6rem);
+
+  border-color: rgb(14 34 51 / 0.42);
+  background-color: rgb(255 255 255 / 0.12);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.45),
+    inset 0 0 18px rgb(255 255 255 / 0.35);
 }
 
 /* Нажатие — кольцо коротко сжимается */

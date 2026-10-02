@@ -1,0 +1,148 @@
+.form {
+  display: block;
+}
+
+/* --- Список «магазинов» -------------------------------------------------------------
+   Таблица в духе Nutrition Facts, как в плашках глав: толстая линейка сверху,
+   тонкие между строками, толстая снизу */
+.results {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.resultsTitle {
+  padding-bottom: 0.3rem;
+  border-bottom: 5px solid var(--c-navy);
+  font-size: 0.86rem;
+  font-weight: 800;
+  font-stretch: 80%;
+  letter-spacing: -0.005em;
+  color: var(--c-navy);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  display: grid;
+}
+
+/* Строка: значок полки, название и полка слева, расстояние справа */
+.store {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 0.55rem;
+  align-items: baseline;
+  padding-block: 0.42rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-navy) 26%, transparent);
+}
+
+.store:last-child {
+  border-bottom: 3px solid var(--c-navy);
+}
+
+/* Значок: в холодильнике — ледяная капля, просто на полке — пустой кружок */
+.mark {
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-navy) 45%, transparent);
+}
+
+.mark[data-chilled='true'] {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--c-ice-soft) 45%, var(--c-ice));
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.8);
+}
+
+.name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-stretch: 90%;
+  color: var(--c-navy);
+}
+
+.shelf {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 0.78rem;
+  color: var(--c-steel);
+}
+
+.distance {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-stretch: 87.5%;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-navy);
+}
+
+/* После поиска строки проявляются по одной, сверху вниз */
+.list[data-searched='true'] .store {
+  animation: result-in 420ms var(--ease-out) both;
+  animation-delay: calc(var(--index) * 70ms + 60ms);
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Без движения — только проявление, без сдвига */
+@keyframes result-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list[data-searched='true'] .store {
+    animation-name: result-fade;
+  }
+}
+
+/* --- Телефон и низкий экран: строка в одну линию — панели нужно поместиться
+   рядом с банкой --------------------------------------------------------------------- */
+@media (max-width: 699px), (max-height: 520px) and (orientation: landscape) {
+  .resultsTitle {
+    padding-bottom: 0.2rem;
+    border-bottom-width: 4px;
+    font-size: 0.8rem;
+  }
+
+  .store {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+    padding-block: 0.3rem;
+  }
+
+  .mark {
+    grid-row: 1;
+  }
+
+  .name {
+    font-size: 0.88rem;
+  }
+
+  .shelf {
+    grid-column: 3;
+    grid-row: 1;
+    font-size: 0.74rem;
+  }
+
+  .distance {
+    grid-column: 4;
+    grid-row: 1;
+    font-size: 0.86rem;
+  }
+}

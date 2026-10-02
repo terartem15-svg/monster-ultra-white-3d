@@ -1,0 +1,222 @@
+/* --- Колонка меток ---------------------------------------------------------------
+   Метки стоят столбиком по пологой дуге: средние чуть дальше от банки
+   (--arc, 0..1). Слева от каждой метки — «причал» её капсулы: где он, решают
+   переменные --dock-gap (от левого края метки до капсулы) и --dock-reach
+   (насколько текущая капсула выдвигается к банке); сцена читает готовые
+   координаты (hooks/useDockTracking.ts). На узком десктопе между банкой и
+   метками места мало — капсулы стоят ближе к меткам, а текущая почти не
+   выдвигается, только растёт. */
+.tags {
+  --dock-gap: clamp(4.25rem, 2.75rem + 2.2vw, 5rem);
+  --dock-reach: clamp(0rem, 9vw - 5.5rem, 4.25rem);
+  --arc-depth: 1.5rem;
+
+  display: grid;
+  gap: clamp(0.5rem, 2.6vh, 1.75rem);
+  justify-items: start;
+}
+
+.item {
+  padding-left: calc(var(--arc) * var(--arc-depth));
+}
+
+/* --- Метка ------------------------------------------------------------------------
+   Кнопка без рамки: номер и название. Подложка — матовое стекло, как у
+   выносок первого экрана, — появляется только у текущей метки. */
+.tag {
+  position: relative;
+  display: block;
+  padding: 0.5rem 0.95rem 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.9rem;
+  color: var(--c-navy);
+  text-align: left;
+  background: rgb(255 255 255 / 0);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0),
+    0 0 0 rgb(24 64 96 / 0);
+  cursor: pointer;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 260ms var(--ease-soft),
+    box-shadow 260ms var(--ease-soft);
+}
+
+.tag:active {
+  transform: scale(0.97);
+}
+
+.tag[aria-current='true'] {
+  background: rgb(255 255 255 / 0.62);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.8),
+    var(--shadow-soft);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+/* Причал — пустой блок слева от метки, по её середине */
+.dock {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + var(--dock-gap));
+  width: var(--dock-reach);
+  height: 0;
+  pointer-events: none;
+}
+
+/* Содержимое приглушено, пока капсула ещё в банке; --docked (0..1) пишет
+   сцена каждый кадр, поэтому перехода здесь нет — он был бы вторым слоем
+   сглаживания поверх скролла */
+.content {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  opacity: calc(0.42 + 0.58 * var(--docked, 0));
+}
+
+/* Номер — на плашке цвета капсулы: тёмный текст на светлом оттенке, сам
+   цвет капсулы для мелкого текста слишком светлый */
+.number {
+  padding: 0.12rem 0.4rem 0.1rem;
+  border-radius: 0.4rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-navy);
+  background: color-mix(in srgb, var(--tag-color) 26%, #ffffff);
+  translate: 0 -0.12em;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 1.4vw, 1.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tag:not([aria-current]):hover {
+    background: rgb(255 255 255 / 0.4);
+  }
+
+  .tag:hover .content {
+    opacity: 1;
+  }
+}
+
+.tag:focus-visible .content {
+  opacity: 1;
+}
+
+/* --- Линии-выноски ------------------------------------------------------------------
+   Слой во весь экран главы, координаты — как у canvas. Линию рисует сцена
+   через stroke-dashoffset, точка стоит у капсулы */
+.lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.line {
+  fill: none;
+  stroke: var(--c-navy);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+  opacity: 0;
+}
+
+.dot {
+  fill: #ffffff;
+  stroke: var(--tag-color);
+  stroke-width: 2;
+  opacity: 0;
+}
+
+/* --- Планшет: метки у правого края сцены, без дуги ---------------------------------- */
+@media (max-width: 999px) {
+  .tags {
+    --dock-gap: 4.25rem;
+    --dock-reach: 3.5rem;
+    --arc-depth: 0rem;
+
+    gap: clamp(0.4rem, 1.8vh, 1.25rem);
+  }
+
+  .name {
+    font-size: 1.05rem;
+  }
+}
+
+/* --- Телефон: от метки остаётся номер (название — в плашке внизу и в имени
+   кнопки для скринридера); область нажатия — не меньше 44 px ----------------------- */
+@media (max-width: 699px) {
+  .tags {
+    --dock-gap: 2.1rem;
+    --dock-reach: 2.1rem;
+
+    gap: clamp(0.1rem, 0.9vh, 0.6rem);
+  }
+
+  .tag {
+    display: grid;
+    place-items: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+  }
+
+  .number {
+    font-size: 0.8rem;
+    translate: none;
+  }
+
+  .name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* --- Низкий экран (телефон лёжа): как на телефоне — от метки остаётся номер,
+   метки плотнее: по высоте их пять на ~300 px ------------------------------------ */
+@media (max-height: 520px) and (orientation: landscape) {
+  .tags {
+    --dock-gap: 2.1rem;
+    --dock-reach: 2.1rem;
+    --arc-depth: 0rem;
+
+    gap: 0.15rem;
+  }
+
+  .tag {
+    display: grid;
+    place-items: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+  }
+
+  .number {
+    font-size: 0.8rem;
+    translate: none;
+  }
+
+  .name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}

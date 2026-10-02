@@ -22,7 +22,7 @@ const GAP_MIN = 18
 const GAP_MAX = 64
 const TAIL = 22
 
-// Временные векторы кадра
+// Временные объекты кадра — в useFrame ничего не создаётся
 const scratch = {
   point: new Vector3(),
   normal: new Vector3(),
@@ -31,17 +31,28 @@ const scratch = {
   edge: new Vector3(),
   right: new Vector3(),
   scale: new Vector3(),
+  progress: { line: 0, label: 0 },
 }
 
 // Прогресс появления выноски: линия рисуется первой, подпись — следом
 function calloutProgress(scroll: number, index: number) {
   const start = PHASES.calloutsStart + index * PHASES.calloutsStep
   const fade = 1 - MathUtils.smoothstep(scroll, PHASES.calloutsFade[0], PHASES.calloutsFade[1])
-  return {
-    line: MathUtils.smoothstep(scroll, start, start + 0.035) * fade,
-    label: MathUtils.smoothstep(scroll, start + 0.015, start + 0.05) * fade,
-  }
+  const out = scratch.progress
+  out.line = MathUtils.smoothstep(scroll, start, start + 0.035) * fade
+  out.label = MathUtils.smoothstep(scroll, start + 0.015, start + 0.05) * fade
+  return out
 }
+
+// Видимость узла — только при смене: значение то же почти каждый кадр
+function setVisibility(element: HTMLElement | SVGElement, visible: boolean) {
+  const value = visible ? 'visible' : 'hidden'
+  if (element.style.visibility !== value) element.style.visibility = value
+}
+
+// Точка сцены → экран: x и y в CSS px (вектор при этом портится — он временный)
+const screenX = (vector: Vector3, width: number) => (vector.x * 0.5 + 0.5) * width
+const screenY = (vector: Vector3, height: number) => (-vector.y * 0.5 + 0.5) * height
 
 export function CalloutTracker() {
   const groupRef = useRef<Group>(null)
@@ -55,36 +66,40 @@ export function CalloutTracker() {
     // Вектор "вправо" камеры — по нему откладывается радиус банки на экране
     scratch.right.set(1, 0, 0).applyQuaternion(camera.quaternion)
 
-    const toScreen = (vector: Vector3) => {
-      vector.project(camera)
-      return [(vector.x * 0.5 + 0.5) * size.width, (-vector.y * 0.5 + 0.5) * size.height] as const
-    }
-
-    CALLOUT_ANCHORS.forEach((anchor, index) => {
+    for (let index = 0; index < CALLOUT_ANCHORS.length; index++) {
+      const anchor = CALLOUT_ANCHORS[index]
       const nodes = calloutNodes[index]
-      if (!nodes) return
+      if (!nodes) continue
       const progress = calloutProgress(sceneState.scroll, index)
 
       // Видимость точки: нормаль в мире против направления на камеру
-      scratch.point.set(...anchor.point).applyMatrix4(group.matrixWorld)
-      scratch.normal.set(...anchor.normal).transformDirection(group.matrixWorld)
+      scratch.point.fromArray(anchor.point).applyMatrix4(group.matrixWorld)
+      scratch.normal.fromArray(anchor.normal).transformDirection(group.matrixWorld)
       scratch.toCamera.copy(camera.position).sub(scratch.point).normalize()
       const facing = MathUtils.smoothstep(scratch.normal.dot(scratch.toCamera), 0.02, 0.3)
       const lineAmount = progress.line * facing
       const labelAmount = progress.label * facing
 
+      // Погасшая выноска прячется целиком — и подпись, и линия с точками:
+      // при быстром скролле (или без сглаживания, «уменьшить движение»)
+      // последний нарисованный кадр линии иначе остался бы на экране
       const visible = lineAmount > 0.001 || labelAmount > 0.001
-      nodes.item.style.visibility = visible ? 'visible' : 'hidden'
-      if (!visible) return
+      setVisibility(nodes.item, visible)
+      setVisibility(nodes.line, visible)
+      setVisibility(nodes.dot, visible)
+      setVisibility(nodes.pulse, visible)
+      if (!visible) continue
 
-      const [x, y] = toScreen(scratch.point)
+      scratch.point.project(camera)
+      const x = screenX(scratch.point, size.width)
+      const y = screenY(scratch.point, size.height)
 
       // Край силуэта на высоте якоря: центр оси банки ± радиус вдоль
       // "вправо" камеры
       scratch.center.set(0, anchor.point[1], 0).applyMatrix4(group.matrixWorld)
       scratch.edge.copy(scratch.center).addScaledVector(scratch.right, CAN_RADIUS * scratch.scale.x)
-      const [centerX] = toScreen(scratch.center)
-      const [edgeX] = toScreen(scratch.edge)
+      const centerX = screenX(scratch.center.project(camera), size.width)
+      const edgeX = screenX(scratch.edge.project(camera), size.width)
       const halfWidth = Math.abs(edgeX - centerX)
       const direction = anchor.side === 'right' ? 1 : -1
       const gap = MathUtils.clamp(size.width * GAP_RATIO, GAP_MIN, GAP_MAX)
@@ -112,7 +127,7 @@ export function CalloutTracker() {
       nodes.label.dataset.compact = space < 170 ? 'true' : 'false'
       nodes.label.style.opacity = `${labelAmount}`
       nodes.label.style.transform = `translate3d(${labelX}px, ${labelY}px, 0) translate(${direction === 1 ? '0' : '-100%'}, -50%) translateY(${(1 - labelAmount) * 8}px)`
-    })
+    }
   })
 
   return <group ref={groupRef} />

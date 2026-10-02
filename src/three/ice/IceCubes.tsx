@@ -196,6 +196,19 @@ const frame = {
   parentQuaternion: new Quaternion(),
 }
 
+// Пока не началось вступление, лёд стоит за краями кадра, и его отсекает
+// проверка видимости (frustum culling) — а ведь лёд и всё, что внутри него,
+// рисуются ещё и в буфер преломления, своими вариантами программ шейдеров.
+// Они собрались бы в тот кадр, когда лёд впервые влетит в кадр, — рывком
+// посреди вступления. Поэтому под прелоадером лёд рисуется и за кадром, и
+// все варианты собираются заранее (Scene.tsx, ReadySignal); со вступлением
+// отсечение возвращается
+function setCulling(group: Group, culled: boolean) {
+  group.traverse((object) => {
+    if (object.frustumCulled !== culled) object.frustumCulled = culled
+  })
+}
+
 // Кинематическое тело следует за куском банки или банкой коллекции: мировая
 // матрица объекта → локальное пространство льда (group). Родительский
 // поворот уже обращён в frame.parentQuaternion
@@ -212,6 +225,8 @@ function followCollider(world: IceWorld, group: Group, object: Object3D | null |
 export function IceCubes() {
   const groupRef = useRef<Group>(null)
   const cubeRefs = useRef<(Group | null)[]>([])
+  // Отсекается ли лёд за кадром — см. setCulling
+  const culled = useRef(true)
 
   // Пузырьки и трещины — только в кубиках: в мелкой крошке их не разглядеть
   const geometries = useMemo(
@@ -259,6 +274,11 @@ export function IceCubes() {
     const world = worldRef.current
     if (!group || !world) return
     group.updateWorldMatrix(true, false)
+    const culling = sceneState.intro > 0
+    if (culled.current !== culling) {
+      culled.current = culling
+      setCulling(group, culling)
+    }
 
     if (sceneState.intro > RELEASE_AT) world.release()
 
@@ -302,7 +322,7 @@ export function IceCubes() {
     world.step(
       delta,
       { position: pointer, velocity: frame.velocity },
-      { spread: sceneState.spread, detail: sceneState.detail, calm: sceneState.calm },
+      { spread: sceneState.spread, detail: sceneState.detail, calm: sceneState.calm, away: sceneState.clear },
     )
 
     world.cubes.forEach(({ body }, index) => {

@@ -19,10 +19,11 @@ const PAD = 4
 
 // Логотип Monster из векторных контуров (brand/logoPaths.ts): коготь в стиле
 // банки Ultra White — ледяная заливка и тёмно-синяя обводка — и надпись
-// MONSTER. Коготь аккуратно "парит": вся группа медленно поднимается и
-// опускается, а каждый штрих чуть отстаёт от соседнего; изредка по когтю
-// пробегает ледяной блик. Анимация — чистый CSS (Logo.module.css), при
-// "уменьшить движение" отключается.
+// MONSTER. Цвет обводки и надписи — --logo-ink (по умолчанию тёмно-синий):
+// в тёмной главе шапка делает его светлым. Коготь аккуратно "парит": вся
+// группа медленно поднимается и опускается, а каждый штрих чуть отстаёт от
+// соседнего; изредка по когтю пробегает ледяной блик. Анимация — чистый CSS
+// (Logo.module.css), при "уменьшить движение" отключается.
 export function Logo({ className, clawOnly = false }: LogoProps) {
   // Уникальные id градиентов: логотип на странице может стоять не один раз
   const id = useId()
@@ -64,7 +65,7 @@ export function Logo({ className, clawOnly = false }: LogoProps) {
             style={{ animationDelay: `${index * -1.7}s` }}
             d={d}
             fill={`url(#${iceId})`}
-            stroke="var(--c-navy)"
+            stroke="var(--logo-ink, var(--c-navy))"
             strokeWidth="5"
             strokeLinejoin="round"
             paintOrder="stroke"
@@ -77,9 +78,10 @@ export function Logo({ className, clawOnly = false }: LogoProps) {
 
       {!clawOnly && (
         <path
+          className={styles.wordmark}
           d={WORDMARK_PATH}
           transform={`translate(${WORDMARK_OFFSET.x} ${WORDMARK_OFFSET.y})`}
-          fill="var(--c-navy)"
+          fill="var(--logo-ink, var(--c-navy))"
           fillRule="evenodd"
         />
       )}

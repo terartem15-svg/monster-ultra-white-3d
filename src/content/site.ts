@@ -1,3 +1,4 @@
+import type { FinalPanelId } from '@/content/final'
 import type { SectionId } from '@/state/navigation'
 
 // Тексты первого экрана — в одном месте, отдельно от вёрстки. Сайт на
@@ -13,16 +14,24 @@ export interface NavLink {
 
 // Вкладка продуктов названа Lineup — линейка вкусов: коротко, понятно и
 // читается в пилюле меню так же легко, как Home и About. About ведёт в
-// футер, которого пока нет, — у него ещё нет главы.
+// футер — к блоку о том, что это за страница (sections/Footer)
 export const NAV_LINKS: NavLink[] = [
   { label: 'Home', href: '#top', section: 'top' },
   { label: 'Lineup', href: '#lineup', section: 'lineup' },
-  { label: 'About', href: '#about' },
+  { label: 'About', href: '#about', section: 'about' },
 ]
 
-export const HEADER_ACTIONS = {
-  store: { label: 'Find a store', href: '#stores' },
-  join: { label: 'Join the pack', href: '#join' },
+// Кнопки шапки ведут к демо-панелям финального экрана (content/final.ts):
+// плавный скролл к нему, иней на стекле разбивается, фокус — в поле панели
+export interface HeaderAction {
+  label: string
+  href: string
+  panel: FinalPanelId
+}
+
+export const HEADER_ACTIONS: Record<'store' | 'join', HeaderAction> = {
+  store: { label: 'Find a store', href: '#stores', panel: 'stores' },
+  join: { label: 'Join the pack', href: '#join', panel: 'join' },
 }
 
 // Заголовок по строкам — каждая строка выезжает из своей маски при загрузке

@@ -1,4 +1,5 @@
 import { MeshPhysicalMaterial, MeshStandardMaterial, Vector2, type CanvasTexture, type Texture } from 'three'
+import { applyColdSurface } from './cold/coldSurface'
 import { createSpunMetalNormalTexture } from './lidParts'
 
 // Материалы банки — общие для банки первого экрана (SlicedCan) и банок
@@ -7,10 +8,11 @@ import { createSpunMetalNormalTexture } from './lidParts'
 // настроек, и банка нового вкуса появляется без паузы на компиляцию.
 //
 //  - label: корпус. Металличность и шероховатость — из карты surface
-//    (серебро орнамента и фольга — металл, белая краска — нет, капли —
-//    гладкая вода), рельеф — из карты нормалей: тиснение когтя и надписей,
-//    капли конденсата, иней, зерно краски. Сверху прозрачный лак (clearcoat)
-//    с тем же рельефом — капли и тиснение ловят блики лака.
+//    (серебро орнамента и фольга — металл, белая краска — нет), рельеф — из
+//    карты нормалей: тиснение когтя и надписей, зерно краски. Сверху
+//    прозрачный лак (clearcoat) с тем же рельефом. Конденсат и иней — не в
+//    этикетке, а поверх неё, в шейдере (cold/coldSurface.ts): так банку
+//    можно высушить и остудить на скролле.
 //  - lid: крышка и дно — голый алюминий с концентрической "токарной"
 //    фактурой; анизотропия вытягивает блики по кругу, как у настоящей крышки.
 //  - tab: язычок — чуть светлее и глаже крышки.
@@ -26,8 +28,11 @@ export interface LabelMaps {
   normal: Texture
 }
 
-export function createLabelMaterial(maps: LabelMaps): MeshPhysicalMaterial {
-  return new MeshPhysicalMaterial({
+// glass — прозрачная версия для «стеклянной» банки главы «Состав» (glass.ts):
+// те же карты и тот же шейдер, но с настоящей прозрачностью
+export function createLabelMaterial(maps: LabelMaps, glass = false): MeshPhysicalMaterial {
+  const material = new MeshPhysicalMaterial({
+    transparent: glass,
     map: maps.color,
     roughnessMap: maps.surface,
     metalnessMap: maps.surface,
@@ -40,6 +45,8 @@ export function createLabelMaterial(maps: LabelMaps): MeshPhysicalMaterial {
     clearcoatNormalScale: new Vector2(0.85, 0.85),
     envMapIntensity: 1.15,
   })
+  applyColdSurface(material)
+  return material
 }
 
 // Смена карт на готовом материале. Набор карт тот же — шейдер тот же,
@@ -95,6 +102,16 @@ export function createMetalMaterials(): MetalMaterials {
     }),
     spun,
   }
+}
+
+// Прозрачные версии крышки и язычка для «стеклянной» банки: копии с теми же
+// числами (и общей картой фактуры) — отличаются только прозрачностью
+export function createLidGlassMaterials(metal: MetalMaterials): { lid: MeshPhysicalMaterial; tab: MeshPhysicalMaterial } {
+  const lid = metal.lid.clone()
+  const tab = metal.tab.clone()
+  lid.transparent = true
+  tab.transparent = true
+  return { lid, tab }
 }
 
 export function disposeMetalMaterials(materials: MetalMaterials) {

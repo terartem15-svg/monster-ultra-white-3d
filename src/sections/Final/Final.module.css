@@ -1,0 +1,322 @@
+/* --- Секция и "прилипающий" экран ------------------------------------------
+   Как у прошлых глав: высота = экран + скролл главы, длина скролла приходит
+   из TS (animations/scrollPhases.ts → Final.tsx) числом svh.
+
+   margin-top: -100svh — секция начинается на экран раньше конца «Состава»:
+   её sticky-блок прилипает ровно тогда, когда «Состав» дошёл до итоговой
+   остановки. До стыка содержимое скрыто (animations/finalScroll.ts), а сама
+   секция не ловит указатель, чтобы не перекрывать «Состав». */
+.final {
+  position: relative;
+  z-index: var(--z-content);
+  height: calc(100vh + var(--final-scroll) * 1vh);
+  height: calc(100svh + var(--final-scroll) * 1svh);
+  margin-top: -100vh;
+  margin-top: -100svh;
+  pointer-events: none;
+}
+
+/* Фокус переносится сюда — это точка старта для Tab, не элемент управления */
+.final:focus {
+  outline: none;
+}
+
+.viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* --- Сетка (десктоп) -----------------------------------------------------------
+   Та же сетка, что у первого экрана: слот банки в центре совпадает с его
+   слотом — финал зеркалит начало страницы. Слева — панель магазинов, справа
+   — заголовок и под ним панель рассылки, как заголовок и карточки Hero. */
+.grid {
+  --hero-inset: calc(var(--page-gutter) + 3.5vw);
+
+  position: absolute;
+  inset: calc(var(--header-height) + clamp(0.5rem, 3vh, 2.5rem)) var(--hero-inset) clamp(2.5rem, 7vh, 4.5rem);
+  display: grid;
+  grid-template-columns: [left] var(--column-width) [center] minmax(0, 1fr) [right] var(--column-width);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.stage {
+  grid-column: center;
+  grid-row: 1 / -1;
+  margin-inline: clamp(0.5rem, 1.2vw, 1.5rem);
+  margin-block: calc(-1 * clamp(0.5rem, 2vh, 1.5rem)) 0;
+}
+
+.titleSlot {
+  grid-column: right;
+  grid-row: 1;
+  /* Заголовок шире колонки — до поля страницы, как у первого экрана */
+  margin-right: -3.5vw;
+}
+
+/* Nunito, как заголовок первого экрана: крупно, плотно, в две строки */
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, min(5.1vw, 8.1vh), 6.5rem);
+  font-weight: 700;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  color: var(--c-navy);
+  text-wrap: balance;
+}
+
+.storesSlot {
+  grid-column: left;
+  grid-row: 1 / -1;
+  align-self: center;
+}
+
+.joinSlot {
+  grid-column: right;
+  grid-row: 2;
+  align-self: end;
+  margin-top: clamp(1rem, 3vh, 2rem);
+}
+
+/* Переключатель панелей — только на телефоне */
+.tabsSlot {
+  display: none;
+}
+
+/* Всё интерактивное — только когда глава на экране (до этого GSAP держит
+   обёртки в visibility: hidden, и указатель проходит насквозь). Панели — ещё
+   и только когда иней разбит: пустые ячейки не перехватывают касания */
+.titleSlot,
+.cueSlot {
+  pointer-events: auto;
+}
+
+.titleSlot,
+.tabsSlot,
+.storesSlot,
+.joinSlot {
+  min-width: 0;
+}
+
+/* --- Панели появляются, когда иней разбит ---------------------------------------
+   Видимость — сразу (поле принимает фокус, как только стекло разбито), а
+   проявление — с задержкой: сначала удар когтя и трещины, панели выплывают,
+   когда осколки уже падают. Уход — быстрый, без задержки */
+.reveal {
+  height: 100%;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(18px);
+  filter: blur(4px);
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out),
+    filter 220ms var(--ease-out),
+    visibility 0s linear 220ms;
+}
+
+.final[data-frost='broken'] .reveal {
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition:
+    opacity 600ms var(--ease-out) 760ms,
+    transform 760ms var(--ease-out) 760ms,
+    filter 600ms var(--ease-out) 760ms,
+    visibility 0s;
+}
+
+/* Правая панель — на полшага позже левой */
+.final[data-frost='broken'] .joinSlot .reveal {
+  transition-delay: 860ms, 860ms, 860ms, 0s;
+}
+
+/* --- Подсказка поверх инея ------------------------------------------------------
+   Внизу по центру, под банкой. Гаснет, когда иней разбит; когда стекло уже
+   протирают, она приглушается — жест понят, но кнопка ещё нужна */
+.cueSlot {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: clamp(0.9rem, 2.6vh, 1.75rem);
+  translate: -50% 0;
+}
+
+.cueInner {
+  transition:
+    opacity 260ms var(--ease-out),
+    transform 260ms var(--ease-out),
+    visibility 0s;
+}
+
+.final[data-wiped='true'] .cueInner {
+  opacity: 0.72;
+}
+
+.final[data-frost='broken'] .cueInner {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    visibility 0s linear 200ms;
+}
+
+/* --- Планшет: заголовок сверху, банка в центре, панели рядом внизу ------------------ */
+@media (max-width: 999px) {
+  .grid {
+    inset: calc(var(--header-height) + 0.5rem) var(--page-gutter) clamp(1rem, 2.6vh, 1.75rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: 0.9rem;
+    row-gap: clamp(0.4rem, 1.4vh, 0.9rem);
+  }
+
+  .titleSlot {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-right: 0;
+  }
+
+  .title {
+    font-size: clamp(2.4rem, 7vw, 4rem);
+  }
+
+  .stage {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+  }
+
+  .storesSlot {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: stretch;
+  }
+
+  .joinSlot {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: stretch;
+    margin-top: 0;
+  }
+
+  /* Подсказка — над местом панелей, по центру */
+  .cueSlot {
+    bottom: clamp(1.5rem, 6vh, 3.5rem);
+  }
+}
+
+/* --- Телефон: панели по одной, с переключателем --------------------------------------
+   Обе панели в одной ячейке: высота строки — по большей из них, и банка не
+   прыгает при переключении. Скрытая вкладка — visibility, а не display */
+@media (max-width: 699px) {
+  .final {
+    height: calc(100vh + var(--final-scroll-compact) * 1vh);
+    height: calc(100svh + var(--final-scroll-compact) * 1svh);
+  }
+
+  .grid {
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) clamp(0.75rem, 2vh, 1.25rem);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    column-gap: 0;
+    row-gap: 0.5rem;
+  }
+
+  .title {
+    font-size: clamp(2rem, 9.4vw, 2.8rem);
+  }
+
+  .tabsSlot {
+    display: block;
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .storesSlot,
+  .joinSlot {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .final[data-frost='broken'] .reveal[data-tab-hidden='true'] {
+    visibility: hidden;
+    opacity: 0;
+    transition: none;
+  }
+
+  .cueSlot {
+    bottom: clamp(3rem, 12vh, 6rem);
+  }
+}
+
+/* --- Низкий экран (телефон лёжа): слева заголовок и банка, справа панели по одной ---
+   Раскладка «столбиком» сюда не помещается: панели закрыли бы банку и ушли
+   за нижний край. Тот же режим низкого экрана — у всех глав (LOW_SCREEN в
+   animations/scrollPhases.ts) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .grid {
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) 0.6rem;
+    grid-template-columns: minmax(0, 1fr) min(22rem, 48%);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 1.25rem;
+    row-gap: 0.35rem;
+  }
+
+  .titleSlot {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .title {
+    font-size: clamp(1.6rem, 8vh, 2.3rem);
+  }
+
+  .stage {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .tabsSlot {
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .storesSlot,
+  .joinSlot {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .final[data-frost='broken'] .reveal[data-tab-hidden='true'] {
+    visibility: hidden;
+    opacity: 0;
+    transition: none;
+  }
+
+  .cueSlot {
+    bottom: 0.9rem;
+  }
+}
+
+/* Без движения: панели и подсказка — только прозрачность, без сдвига и размытия */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .final[data-frost='broken'] .reveal,
+  .cueInner,
+  .final[data-frost='broken'] .cueInner {
+    transform: none;
+    filter: none;
+  }
+}

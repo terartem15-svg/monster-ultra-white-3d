@@ -86,13 +86,19 @@ export function Lineup() {
       <div ref={viewportRef} className={styles.viewport}>
         <div className={styles.grid}>
           <div ref={slotRef} className={styles.stage} aria-hidden="true" />
+          {/* Две обёртки — два слоя анимации: внешняя проявляется на стыке
+              с первым экраном, внутренняя гаснет на стыке с «Холодом» */}
           <div className={styles.panelSlot} data-lineup-ui>
-            <FlavorPanel index={active} />
+            <div data-lineup-exit>
+              <FlavorPanel index={active} />
+            </div>
           </div>
         </div>
 
         <div className={styles.railSlot} data-lineup-ui>
-          <LineupRail active={active} onSelect={handleSelect} travelRef={travelRef} fillRef={fillRef} />
+          <div data-lineup-exit>
+            <LineupRail active={active} onSelect={handleSelect} travelRef={travelRef} fillRef={fillRef} />
+          </div>
         </div>
       </div>
 

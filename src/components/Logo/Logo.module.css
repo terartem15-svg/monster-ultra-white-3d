@@ -18,6 +18,12 @@
 .stroke {
   animation: drift 4.6s ease-in-out infinite alternate;
   transform-box: fill-box;
+  transition: stroke 300ms var(--ease-soft);
+}
+
+/* Цвет надписи меняется вместе с темой шапки — плавно, а не скачком */
+.wordmark {
+  transition: fill 300ms var(--ease-soft);
 }
 
 /* Ледяной блик: узкая светлая полоса пробегает по когтю раз в ~7 секунд,

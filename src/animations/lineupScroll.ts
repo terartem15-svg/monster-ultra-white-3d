@@ -3,6 +3,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { FLAVORS } from '@/content/flavors'
 import { motion } from '@/state/motion'
 import { setActiveSection } from '@/state/navigation'
+import { chapterScrollRange } from './chapterRange'
+import { keepChapterPosition } from './chapterRestore'
 import {
   LINEUP,
   LINEUP_BREAKPOINTS,
@@ -22,7 +24,8 @@ gsap.registerPlugin(ScrollTrigger)
 //  - ведёт шкалу прогресса: кольцо и заливка едут непрерывно, за скроллом;
 //  - сообщает, какой вкус сейчас в центре (плашка меняет текст на середине
 //    перехода) и что в меню пора подсветить Lineup;
-//  - на стыке с первым экраном проявляет плашку и шкалу.
+//  - на стыке с первым экраном проявляет плашку и шкалу, на стыке с
+//    главой «Холод» — гасит их.
 //
 // Секция начинается на экран раньше конца первого экрана (margin-top: -100svh
 // в CSS): её sticky-экран "прилипает" ровно тогда, когда сцена Hero дошла до
@@ -46,23 +49,10 @@ interface LineupScrollOptions {
 // Раскладка главы — по той же границе, что и в CSS (Lineup.module.css)
 const COMPACT_QUERY = `(max-width: ${LINEUP_BREAKPOINTS.compact - 1}px)`
 
-// Где глава начинается и сколько длится, px прокрутки. Начало — там, где
-// кончается сцена Hero (её ScrollTrigger 'bottom bottom' считает по высоте
-// окна), а не там, где прилипает sticky-экран главы (он 100svh). На
-// десктопе это одно и то же. На телефоне со спрятанной адресной строкой окно
-// выше 100svh — без этой поправки между главами была бы "мёртвая" полоса
-// скролла, где не меняется ничего, а остановки на банках сжимались бы.
-export function lineupScrollRange(section: HTMLElement, viewport: HTMLElement) {
-  const top = section.getBoundingClientRect().top + window.scrollY
-  return {
-    start: top + viewport.offsetHeight - window.innerHeight,
-    distance: section.offsetHeight - viewport.offsetHeight,
-  }
-}
-
-// Позиция прокрутки (px от верха документа) для доли пути главы в svh
+// Позиция прокрутки (px от верха документа) для доли пути главы в svh.
+// Начало главы — где кончается сцена Hero (animations/chapterRange.ts)
 function scrollTopAt(section: HTMLElement, viewport: HTMLElement, scrolledSvh: number, layout: LineupLayout): number {
-  const range = lineupScrollRange(section, viewport)
+  const range = chapterScrollRange(section, viewport)
   return range.start + (scrolledSvh / lineupDistance(layout, COUNT)) * range.distance
 }
 
@@ -79,10 +69,8 @@ export function createLineupScroll(section: HTMLElement, options: LineupScrollOp
   const ui = Array.from(section.querySelectorAll<HTMLElement>('[data-lineup-ui]'))
   let activeIndex = -1
   // Последнее известное положение в главе — чтобы после поворота телефона
-  // или смены размера окна остаться на той же банке (длина главы в
-  // пикселях при этом меняется, и та же прокрутка значила бы другую банку)
+  // или смены размера окна остаться на той же банке (chapterRestore.ts)
   const last: LineupState & { progress: number } = { progress: 0, enter: 0, position: 0, raw: 0 }
-  let restore: { enter: number; raw: number } | null = null
 
   media.add({ compact: COMPACT_QUERY, regular: `not all and ${COMPACT_QUERY}`, reduce: '(prefers-reduced-motion: reduce)' }, (context) => {
     const layout: LineupLayout = context.conditions?.compact ? 'compact' : 'regular'
@@ -117,9 +105,9 @@ export function createLineupScroll(section: HTMLElement, options: LineupScrollOp
     const timeline = gsap.timeline({
       scrollTrigger: {
         trigger: section,
-        start: () => lineupScrollRange(section, viewport).start,
+        start: () => chapterScrollRange(section, viewport).start,
         end: () => {
-          const range = lineupScrollRange(section, viewport)
+          const range = chapterScrollRange(section, viewport)
           return range.start + range.distance
         },
         scrub: true,
@@ -136,26 +124,34 @@ export function createLineupScroll(section: HTMLElement, options: LineupScrollOp
       .set({}, {}, 1)
   })
 
-  // Пересчёт позиций (поворот, смена размера окна, смена раскладки): перед
-  // ним запоминаем, где были в главе, после — возвращаемся туда же
-  const onRefreshInit = () => {
-    restore = last.progress > 0 && last.progress < 1 ? { enter: last.enter, raw: last.raw } : null
-  }
-  const onRefresh = () => {
-    if (!restore) return
+  // Пересчёт позиций (поворот, смена размера окна, смена раскладки):
+  // возвращаемся на то же место главы уже в новой раскладке
+  const stopKeeping = keepChapterPosition(last, ({ enter, raw }) => {
     const layout = motion.lineupLayout
     const { entry, step } = LINEUP[layout]
-    const scrolled = restore.enter < 1 ? restore.enter * entry : entry + step * restore.raw
-    restore = null
-    const target = scrollTopAt(section, viewport, scrolled, layout)
+    const target = scrollTopAt(section, viewport, enter < 1 ? enter * entry : entry + step * raw, layout)
     if (Math.abs(window.scrollY - target) > 2) window.scrollTo(0, target)
-  }
-  ScrollTrigger.addEventListener('refreshInit', onRefreshInit)
-  ScrollTrigger.addEventListener('refresh', onRefresh)
+  })
+
+  // Стык со следующей главой («Холод»): когда экран коллекции отлипает и
+  // уезжает вверх, плашка и шкала гаснут за первую треть экрана — фон под
+  // ними уже темнеет. Анимируются внутренние обёртки: внешние (data-lineup-ui)
+  // проявляет таймлайн главы, и две анимации не спорят за прозрачность.
+  // Отдельный триггер: он живёт уже после конца скролл-сцены коллекции
+  const exit = gsap.fromTo(
+    Array.from(section.querySelectorAll<HTMLElement>('[data-lineup-exit]')),
+    { autoAlpha: 1 },
+    {
+      autoAlpha: 0,
+      ease: 'none',
+      scrollTrigger: { trigger: section, start: 'bottom bottom', end: 'bottom 70%', scrub: true },
+    },
+  )
 
   return () => {
-    ScrollTrigger.removeEventListener('refreshInit', onRefreshInit)
-    ScrollTrigger.removeEventListener('refresh', onRefresh)
+    stopKeeping()
+    exit.scrollTrigger?.kill()
+    exit.kill()
     media.revert()
     motion.lineup = 0
     setActiveSection('top')

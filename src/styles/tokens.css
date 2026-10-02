@@ -21,6 +21,25 @@
   --c-glass: color-mix(in srgb, #ffffff 42%, transparent);
   --c-glass-strong: color-mix(in srgb, #ffffff 78%, transparent);
 
+  /* Ночь — глава «Холод», единственная тёмная. Глубокий ледяной синий того
+     же тона, что обводка когтя, только на всю сцену (фон рисует WebGL —
+     three/lineup/lineupLook.ts, цвета там те же). Текст — «иней». */
+  --c-night: #0a2240; /* фон под шапкой, строка браузера на телефоне */
+  --c-ice-bright: #8fd3ff; /* свечение отметки и «ртути» шкалы */
+  --c-text-night: var(--c-frost);
+  --c-text-night-muted: color-mix(in srgb, var(--c-frost) 70%, transparent);
+  --c-line-night: color-mix(in srgb, var(--c-frost) 20%, transparent);
+  --shadow-night: 0 30px 60px -30px rgb(1 8 18 / 0.7);
+
+  /* Футер — глубокая ночь, темнее «Холода»: те же цвета, что у ночного неба
+     сцены (three/Backdrop.tsx: верх, середина, свечение горизонта) и у
+     северного сияния (бирюза и фиолет его занавесей) */
+  --c-night-deep: #050b18;
+  --c-night-mid: #0b1d38;
+  --c-night-horizon: #143a63;
+  --c-aurora: #1c6673;
+  --c-aurora-violet: #2c2461;
+
   /* --- Шрифты ----------------------------------------------------------------
      Как в основном референсе: заголовок — Nunito (геометрический гротеск со
      скруглёнными окончаниями), навигация и текст — Archivo. Оба вариативные:

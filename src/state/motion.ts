@@ -1,4 +1,4 @@
-import type { LineupLayout } from '@/animations/scrollPhases'
+import type { ChapterLayout } from '@/animations/scrollPhases'
 
 // Общее изменяемое состояние "DOM ↔ 3D". Скролл, указатель и вступительная
 // анимация живут в DOM (GSAP, ScrollTrigger, слушатели окна), а читаются
@@ -27,13 +27,28 @@ export const motion = {
   // раскладка: на телефоне шаги короче, от этого зависит перевод прогресса
   // в положение банок (animations/scrollPhases.ts)
   lineup: 0,
-  lineupLayout: 'regular' as LineupLayout,
+  lineupLayout: 'regular' as ChapterLayout,
+  // Прогресс главы «Холод» 0..1 (animations/coldScroll.ts) и её раскладка
+  cold: 0,
+  coldLayout: 'regular' as ChapterLayout,
+  // Прогресс главы «Состав» 0..1 (animations/insideScroll.ts) и её раскладка
+  inside: 0,
+  insideLayout: 'regular' as ChapterLayout,
+  // Прогресс финального экрана 0..1 (animations/finalScroll.ts) и его раскладка
+  final: 0,
+  finalLayout: 'regular' as ChapterLayout,
 
   // "Слот" под банку в CSS-пикселях окна: пустой блок в раскладке Hero, куда
   // сцена ставит 3D-композицию. Раскладку решает CSS, 3D под неё подстраивается.
   slot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
   // Слот банки в главе «Коллекция» — там, где банка стоит, когда глава на экране
   lineupSlot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
+  // Слот банки в главе «Холод»
+  coldSlot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
+  // Слот банки в главе «Состав»
+  insideSlot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
+  // Слот банки на финальном экране (по нему же встаёт удар когтя по инею)
+  finalSlot: { x: 0, y: 0, width: 0, height: 0 } as SlotRect,
 
   // Системная настройка "уменьшить движение". Читается сразу при загрузке
   // модуля: сцене значение нужно уже на первом рендере (лёд либо влетает

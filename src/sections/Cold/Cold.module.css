@@ -1,0 +1,171 @@
+/* --- Секция и "прилипающий" экран ------------------------------------------
+   Как у коллекции: высота = экран + скролл главы, длина скролла приходит из
+   TS (animations/scrollPhases.ts → Cold.tsx) числом svh.
+
+   margin-top: -100svh — секция начинается на экран раньше конца коллекции:
+   её sticky-блок прилипает ровно тогда, когда коллекция дошла до последней
+   банки, и та же банка сразу становится банкой этой главы. До стыка
+   содержимое главы скрыто (animations/coldScroll.ts), а сама секция не
+   ловит указатель, чтобы не перекрывать коллекцию. */
+.cold {
+  position: relative;
+  z-index: var(--z-content);
+  height: calc(100vh + var(--cold-scroll) * 1vh);
+  height: calc(100svh + var(--cold-scroll) * 1svh);
+  margin-top: -100vh;
+  margin-top: -100svh;
+  pointer-events: none;
+}
+
+/* Фокус переносится сюда — это точка старта для Tab, не элемент управления */
+.cold:focus {
+  outline: none;
+}
+
+.viewport {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* --- Сетка (десктоп) -----------------------------------------------------------
+   Слот банки в центре — тот же, что у первого экрана и коллекции, только
+   ниже край: под банкой шкала температуры. Слева — табло (огромное число
+   выходит из колонки к банке, как заголовок первого экрана), справа — текст. */
+.grid {
+  --hero-inset: calc(var(--page-gutter) + 3.5vw);
+  --track-space: clamp(5.75rem, 12vh, 7.5rem);
+
+  position: absolute;
+  inset: calc(var(--header-height) + clamp(0.5rem, 3vh, 2.5rem)) var(--hero-inset) var(--track-space);
+  display: grid;
+  grid-template-columns: [left] var(--column-width) [center] minmax(0, 1fr) [right] var(--column-width);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.stage {
+  grid-column: center;
+  grid-row: 1;
+  margin-inline: clamp(0.5rem, 1.2vw, 1.5rem);
+  margin-block: calc(-1 * clamp(0.5rem, 2vh, 1.5rem)) 0;
+}
+
+.readoutSlot {
+  grid-column: left;
+  grid-row: 1;
+  align-self: center;
+  /* Число шире колонки — уходит к банке, но не дальше её края */
+  margin-right: -6vw;
+  margin-top: -4vh;
+}
+
+.storySlot {
+  grid-column: right;
+  grid-row: 1;
+  align-self: center;
+  min-width: 0;
+}
+
+/* Шкала — внизу по центру, под банкой */
+.trackSlot {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.4rem, 1.4vh, 1.1rem);
+  width: min(48rem, 64vw);
+  translate: -50% 0;
+}
+
+/* Всё интерактивное — только когда глава на экране (до этого GSAP держит
+   обёртки в visibility: hidden, и указатель проходит насквозь) */
+.storySlot,
+.trackSlot {
+  pointer-events: auto;
+}
+
+/* --- Планшет: табло сверху, банка, текст под ней, шкала внизу ---------------------- */
+@media (max-width: 999px) {
+  .grid {
+    --track-space: clamp(5.5rem, 10vh, 6.5rem);
+
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) var(--track-space);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    row-gap: clamp(0.4rem, 1.4vh, 1rem);
+  }
+
+  .readoutSlot {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+
+  .stage {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+  }
+
+  .storySlot {
+    grid-column: 1;
+    grid-row: 3;
+    max-width: 36rem;
+  }
+
+  .trackSlot {
+    width: calc(100% - 2 * var(--page-gutter) - 1.5rem);
+  }
+}
+
+/* --- Телефон: та же схема, глава короче (шаги скролла — в scrollPhases) ------- */
+@media (max-width: 699px) {
+  .cold {
+    height: calc(100vh + var(--cold-scroll-compact) * 1vh);
+    height: calc(100svh + var(--cold-scroll-compact) * 1svh);
+  }
+
+  .grid {
+    --track-space: 6.1rem;
+  }
+
+  .trackSlot {
+    width: calc(100% - 2 * var(--page-gutter) - 1rem);
+  }
+}
+
+/* --- Низкий экран (телефон лёжа): как на десктопе — табло слева, банка в
+   центре, текст справа; столбиком сюда не помещается --------------------------- */
+@media (max-height: 520px) and (orientation: landscape) {
+  .grid {
+    --track-space: 4.4rem;
+
+    inset: calc(var(--header-height) + 0.25rem) var(--page-gutter) var(--track-space);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: 1rem;
+  }
+
+  .readoutSlot {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
+  }
+
+  .stage {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .storySlot {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .trackSlot {
+    bottom: 0.3rem;
+    width: min(34rem, calc(100% - 2 * var(--page-gutter)));
+  }
+}
