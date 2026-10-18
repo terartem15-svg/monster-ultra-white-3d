@@ -5,6 +5,8 @@
 > Monster, Monster Energy, Ultra and the claw logo are trademarks of their respective owners;
 > the logo and can artwork in this repository are used only to illustrate the concept.
 
+**[Live demo →](https://monster-landing-psi.vercel.app)**
+
 ![The first screen: the can in slices, ice and four feature cards](docs/hero.jpg)
 
 A one-page 3D landing for an ice-cold energy drink. One WebGL scene follows a single
