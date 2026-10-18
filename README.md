@@ -76,5 +76,5 @@ chapter texts, the store list and the sign-up form are written for the demo.
 
 ## License
 
-No license has been chosen for the code yet. The Monster logo, can artwork and trademarks
-belong to Monster Energy Company and are not covered by any license of this repository.
+The code is released under the [MIT License](LICENSE). The Monster logo, can artwork and
+trademarks belong to Monster Energy Company and are not covered by this license.
