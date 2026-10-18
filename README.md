@@ -1,4 +1,4 @@
-# Monster Ultra White — concept landing page
+# Monster Ultra White — 3D Concept Landing Page
 
 > **Concept demo and portfolio piece. Not an official Monster Energy website.**
 > This project is not affiliated with, endorsed or sponsored by Monster Energy Company.
