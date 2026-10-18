@@ -11,6 +11,10 @@ import {
 } from '@/state/navigation'
 import styles from './Header.module.css'
 
+// Ширина, на которой меню и кнопки уходят в панель за кнопкой Menu, — та же,
+// что в Header.module.css
+const MENU_QUERY = '(max-width: 999px)'
+
 // Логотип ведёт туда же, куда пункт главы "top" (Home), где бы тот ни стоял в
 // меню — ищем по главе, а не по позиции в списке
 const HOME_LINK: NavLink = NAV_LINKS.find((link) => link.section === 'top') ?? { label: 'Home', href: '#top', section: 'top' }
@@ -57,6 +61,18 @@ export function Header() {
       lenis?.start()
     }
   }, [menuOpen, lenis])
+
+  // Окно стало шире панели (повернули планшет, растянули окно) — меню
+  // закрывается. Иначе панель осталась бы поверх страницы без кнопки Close
+  // (на широком экране её прячет CSS), со стоящим скроллом и inert-контентом.
+  useEffect(() => {
+    const media = window.matchMedia(MENU_QUERY)
+    const onChange = () => {
+      if (!media.matches) setMenuOpen(false)
+    }
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [])
 
   const closeMenu = () => setMenuOpen(false)
 
