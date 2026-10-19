@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Vite 8 needs Node 20.19+ or 22.12+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint (oxlint)
+        run: npm run lint -- --deny-warnings
+
+      - name: Type check
+        run: npx tsc -b
+
+      # `npm run build` repeats `tsc -b` (incremental, already up to date) and runs `vite build`
+      - name: Production build
+        run: npm run build
