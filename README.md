@@ -7,6 +7,8 @@
 
 **[Live demo →](https://monster-landing-psi.vercel.app)**
 
+[![CI](https://github.com/terartem15-svg/monster-ultra-white-3d/actions/workflows/ci.yml/badge.svg)](https://github.com/terartem15-svg/monster-ultra-white-3d/actions/workflows/ci.yml)
+
 ![The first screen: the can in slices, ice and four feature cards](docs/hero.jpg)
 
 A one-page 3D landing for an ice-cold energy drink. One WebGL scene follows a single
